@@ -1,5 +1,5 @@
-export type Post = {
-    id: string;
+export type PostTypes = {
+    _id: string;
     title: string;
     tags: string[];
     description: string;
