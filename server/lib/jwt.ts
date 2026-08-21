@@ -1,4 +1,4 @@
-import { AppError } from "../middlewares/error.middleware";
+import { AppError } from "../lib/errors";
 import { TokenPayLoad } from "../types/user.types";
 import jwt, {SignOptions} from 'jsonwebtoken'
 

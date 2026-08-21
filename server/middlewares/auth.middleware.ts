@@ -1,29 +1,23 @@
-import User from "../models/user.model";
-import jwt from 'jsonwebtoken';
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from "express";
+import { AppError } from "../lib/errors";
+import { verifyAccessToken } from "../lib/jwt";
 
-export const protect = async (req: Request, res: Response, next: NextFunction) => {
-    let token;
 
-    if(req.headers.authorization && req.headers.authorization.startsWith('Bearer')){
-        try {
-            token = req.headers.authorization.split(' ')[1]
+export function authenticate(
+    req: Request,
+    res: Response,
+    next: NextFunction
+): void{
+    const authHeader = req.headers.authorization
 
-            const decoded = jwt.verify(token, process.env.JWT_SECRET as string)
-
-            req.user = await User.findById(decoded.id).select("-password")
-
-            return next()
-        } catch (error as Error) {
-            console.error("Token verification failed", error.message)
-            return res.status(401).json({
-                success: false,
-                message: "Not authorized, token failed"
-            })
-        }
+    if(!authHeader?.startsWith("Bearer ")){
+        next(new AppError(401, "Access token is required"))
+        return
     }
-    return res.status(401).json({
-        success: false,
-        message: "Not authorized, token failed"
-    })
+
+    const token = authHeader.split(" ")[1]
+
+    req.user = verifyAccessToken(token)
+
+    next()
 }

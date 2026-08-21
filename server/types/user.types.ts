@@ -1,23 +1,24 @@
-export type User = {
-    id: string;
+export type UserTypes = {
+    _id: string;
     email: string;
-    role: string;
-    created_at: Date;
+    username: string;
+    favorites: string[];
+    createdAt: Date;
 }
 
 export type DBUserRow = {
-    id: string;
+    _id: string;
     email: string;
-    role: string;
-    created_at: Date;
+    username: string;
+    favorites: string[];
+    createdAt: Date;
 }
 
 export type DBUserWithPasswordRow = DBUserRow & {
-    password_hash: string | null
+    passwordHash: string | null
 }
 
 export type TokenPayLoad = {
     userId: string,
     email: string,
-    role: string
 }
