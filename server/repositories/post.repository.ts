@@ -10,7 +10,7 @@ export async function createPost(
   photoUrl: string,
   timeCaptured: number,
   userId: string
-): Promise<PostTypes | null> {
+): Promise<PostTypes> {
   // Implementation for creating a post
   const post = await Post.create({
     title,
@@ -26,7 +26,7 @@ export async function createPost(
     .select("_id title tags description category photoUrl timeCaptured createdBy createdAt updatedAt")
     .lean<PostTypes>();
 
-  return result ?? null;
+  return result!;
 }
 
 export async function getPostsByUserId(userId: string): Promise<PostTypes[]> {
