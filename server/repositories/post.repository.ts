@@ -1,6 +1,5 @@
 import User from "../models/user.model";
 import Post from "../models/post.model";
-import { UserTypes, DBUserRow, DBUserWithPasswordRow } from "../types/user.types";
 import { PostTypes } from "../types/post.types";
 
 export async function createPost(
@@ -51,33 +50,13 @@ export async function getPostByIdAndUserId(postId: string, userId: string): Prom
 export async function updatePost(
   postId: string,
   userId: string,
-  title?: string,
-  tags?: string[],
-  description?: string,
-  category?: string,
-  photoUrl?: string,
-  timeCaptured?: number
+  updateData: Partial<PostTypes>
 ): Promise<PostTypes | null> {
-  const post = await Post.findById(postId);
-  if (!post) return null;
-
-  // Optional: ensure only the owner can update
-  if (post.createdBy.toString() !== userId) {
-    return null; // or throw an error
-  }
-
-  post.title = title ?? post.title;
-  post.tags = tags ?? post.tags;
-  post.description = description ?? post.description;
-  post.category = category ?? post.category;
-  post.photoUrl = photoUrl ?? post.photoUrl;
-  post.timeCaptured = timeCaptured ?? post.timeCaptured;
-
-  await post.save();
-
-  const result = await Post.findById(post._id)
-    .select("_id title tags description category photoUrl timeCaptured createdBy createdAt updatedAt")
-    .lean<PostTypes>();
+  const result = await Post.findOneAndUpdate(
+    { _id: postId, createdBy: userId },
+    { $set: updateData },
+    { new: true, runValidators: true }
+  ).lean<PostTypes>();
 
   return result ?? null;
 }
