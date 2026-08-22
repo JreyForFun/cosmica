@@ -15,7 +15,7 @@ export type DBUserRow = {
 }
 
 export type DBUserWithPasswordRow = DBUserRow & {
-    passwordHash: string | null
+    password: string | null
 }
 
 export type TokenPayLoad = {
