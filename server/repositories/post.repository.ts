@@ -1,4 +1,3 @@
-import User from "../models/user.model";
 import Post from "../models/post.model";
 import { PostTypes } from "../types/post.types";
 
@@ -33,6 +32,15 @@ export async function getPostsByUserId(userId: string): Promise<PostTypes[]> {
   // Implementation for getting posts by user ID
   const result = await Post.find({ createdBy: userId })
     .select("_id title tags description category photoUrl timeCaptured createdBy createdAt updatedAt")
+    .lean<PostTypes[]>();
+
+  return result;
+}
+
+export async function getAllPosts(): Promise<PostTypes[]> {
+  const result = await Post.find({})
+    .select("_id title tags description category photoUrl timeCaptured createdBy createdAt updatedAt")
+    .sort({ createdAt: -1 })
     .lean<PostTypes[]>();
 
   return result;

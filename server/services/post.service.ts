@@ -1,7 +1,11 @@
 import { AppError } from "../lib/errors";
 import NodeCache from "node-cache";
 import { PostTypes } from "../types/post.types";
-import {createPost, deletePost, getPostByIdAndUserId, getPostsByUserId, updatePost } from "../repositories/post.repository";
+import {
+  createPost,
+  getAllPosts as getAllPostsFromDatabase,
+  getPostsByUserId,
+} from "../repositories/post.repository";
 
 const cache = new NodeCache({ stdTTL: 60 }); // cache entries expire after 60s
 const TASK_CACHE_TTL = 60;
@@ -36,22 +40,21 @@ export async function getUserPosts(userId: string): Promise<PostTypes[]>{
 }
 
 export async function getAllPosts(
-  userId: string,
   filter?: { search?: string }
 ): Promise<PostTypes[]> {
-  const userCacheKey = `posts:user:${userId}`;
+  const cacheKey = "posts:all";
   let posts: PostTypes[];
 
   // 1. Check in-memory cache first
-  const cachedPosts = cache.get<PostTypes[]>(userCacheKey);
+  const cachedPosts = cache.get<PostTypes[]>(cacheKey);
 
   if (cachedPosts) {
-    console.log(`Cache HIT: ${userCacheKey}`);
+    console.log(`Cache HIT: ${cacheKey}`);
     posts = cachedPosts;
   } else {
-    console.log(`Cache MISS: ${userCacheKey}`);
-    posts = await getUserPosts(userId); // Fetch from DB
-    cache.set(userCacheKey, posts, TASK_CACHE_TTL);
+    console.log(`Cache MISS: ${cacheKey}`);
+    posts = await getAllPostsFromDatabase();
+    cache.set(cacheKey, posts, TASK_CACHE_TTL);
   }
 
   // 2. Fast in-memory filter

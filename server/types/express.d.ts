@@ -1,4 +1,4 @@
-import { TokenPayLoad } from "./users.types.ts";
+import { TokenPayLoad } from "./user.types";
 
 declare global {
     namespace Express {
