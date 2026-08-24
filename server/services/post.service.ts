@@ -5,6 +5,9 @@ import {
   createPost,
   getAllPosts as getAllPostsFromDatabase,
   getPostsByUserId,
+  getPostByIdAndUserId as fetchPostByIdAndUserId,
+  updatePost,
+  deletePost
 } from "../repositories/post.repository";
 
 const cache = new NodeCache({ stdTTL: 60 }); // cache entries expire after 60s
@@ -64,4 +67,52 @@ export async function getAllPosts(
   }
 
   return posts;
+}
+
+export async function getPostByIdAndUserId(
+  postId: string, userId: string
+): Promise<PostTypes | null> {
+  const cacheKey = `post:${postId}:id:${userId}`;
+  const cachedPosts = cache.get<PostTypes | null>(cacheKey);
+
+  if (cachedPosts) {
+    console.log(`Cache HIT: ${cacheKey}`);
+    return cachedPosts;
+  }
+  console.log(`Cache MISS: ${cacheKey}`);
+  const post = await fetchPostByIdAndUserId(postId, userId);
+  if(post){
+    cache.set(cacheKey, JSON.stringify(post), TASK_CACHE_TTL);
+  }
+  return post;
+}
+
+export async function updateUserPost(
+  postId: string,
+  userId: string,
+  updateData: Partial<PostTypes>
+): Promise<PostTypes | null> {
+  const validTitle = validateTitle(updateData.title || "");
+  const post = updatePost(postId, userId, { ...updateData, title: validTitle });
+  if(!post){
+    throw new AppError(404, "Post not found or you are not authorized to update it");
+  }
+  return post;
+}
+
+export async function deleteTaskCache(
+  userId: string, taskId?: string
+): Promise<void> {
+  await cache.del(`post:id:${userId}`);
+  if(taskId){
+    await cache.del(`post:${taskId}:id:${userId}`);
+  }
+  console.log(`Cache cleared for userId: ${userId}, taskId: ${taskId || "N/A"}`);
+}
+
+export async function deleteUserPost(
+  userId: string, postId: string
+): Promise<void> {
+  const deleted = await deletePost(postId, userId);
+  await deleteTaskCache(userId, postId);
 }
