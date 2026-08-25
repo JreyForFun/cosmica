@@ -35,7 +35,9 @@ export async function createUserPost(
     userId: string
 ): Promise<PostTypes> {
     const validatedTitle = validateTitle(title);
-    return createPost(validatedTitle, tags, description, category, photoUrl, timeCaptured, userId);
+  const post = await createPost(validatedTitle, tags, description, category, photoUrl, timeCaptured, userId);
+  cache.del("posts:all");
+  return post;
 }
 
 export async function getUserPosts(userId: string): Promise<PostTypes[]>{
@@ -82,7 +84,7 @@ export async function getPostByIdAndUserId(
   console.log(`Cache MISS: ${cacheKey}`);
   const post = await fetchPostByIdAndUserId(postId, userId);
   if(post){
-    cache.set(cacheKey, JSON.stringify(post), TASK_CACHE_TTL);
+    cache.set(cacheKey, post, TASK_CACHE_TTL);
   }
   return post;
 }
@@ -92,11 +94,18 @@ export async function updateUserPost(
   userId: string,
   updateData: Partial<PostTypes>
 ): Promise<PostTypes | null> {
-  const validTitle = validateTitle(updateData.title || "");
-  const post = updatePost(postId, userId, { ...updateData, title: validTitle });
+  const validTitle = updateData.title === undefined
+    ? undefined
+    : validateTitle(updateData.title);
+  const post = await updatePost(postId, userId, {
+    ...updateData,
+    ...(validTitle === undefined ? {} : { title: validTitle }),
+  });
   if(!post){
     throw new AppError(404, "Post not found or you are not authorized to update it");
   }
+  cache.del(`post:${postId}:id:${userId}`);
+  cache.del("posts:all");
   return post;
 }
 
@@ -114,5 +123,9 @@ export async function deleteUserPost(
   userId: string, postId: string
 ): Promise<void> {
   const deleted = await deletePost(postId, userId);
+  if(!deleted){
+    throw new AppError(404, "Post not found or you are not authorized to delete it");
+  }
   await deleteTaskCache(userId, postId);
+  cache.del("posts:all");
 }

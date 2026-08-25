@@ -1,13 +1,20 @@
 import express from 'express';
+import { createServer } from './app';
+import dotenv from 'dotenv';
+import { logger } from './lib/logger';
+import connectDB from './config/connectDb';
 
-const app = express();
+dotenv.config();
 
-app.use(express.json());
+const app = createServer();
+async function startServer() {
+  await connectDB();
 
-app.get('/', (req, res) => {
-  res.send('Hello, World!');
-});
+  app.listen(process.env.PORT, () => {
+    logger.info(`Server is running on port ${process.env.PORT}`);
+  });
+}
 
-app.listen(3000, () => {
-  console.log('Server is running on port 3000');
+startServer().catch((error) => {
+  logger.error('Error starting server:', error);
 });
