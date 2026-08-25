@@ -163,7 +163,7 @@ export async function deleteUserPostHandler(
     if(typeof postId !== 'string' || !postId.trim()){
       throw new AppError(400, "Post ID is required");
     }
-    await deleteUserPost(postId, postId);
+    await deleteUserPost(userId, postId);
     res.status(200).json({
       success: true,
       message: "Post deleted successfully"

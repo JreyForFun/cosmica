@@ -6,6 +6,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.createUserPost = createUserPost;
 exports.getUserPosts = getUserPosts;
 exports.getAllPosts = getAllPosts;
+exports.getPostByIdAndUserId = getPostByIdAndUserId;
+exports.updateUserPost = updateUserPost;
+exports.deleteTaskCache = deleteTaskCache;
+exports.deleteUserPost = deleteUserPost;
 const errors_1 = require("../lib/errors");
 const node_cache_1 = __importDefault(require("node-cache"));
 const post_repository_1 = require("../repositories/post.repository");
@@ -23,7 +27,9 @@ function validateTitle(title) {
 }
 async function createUserPost(title, tags, description, category, photoUrl, timeCaptured, userId) {
     const validatedTitle = validateTitle(title);
-    return (0, post_repository_1.createPost)(validatedTitle, tags, description, category, photoUrl, timeCaptured, userId);
+    const post = await (0, post_repository_1.createPost)(validatedTitle, tags, description, category, photoUrl, timeCaptured, userId);
+    cache.del("posts:all");
+    return post;
 }
 async function getUserPosts(userId) {
     return (0, post_repository_1.getPostsByUserId)(userId);
@@ -48,5 +54,49 @@ async function getAllPosts(filter) {
         return posts.filter(post => post.title.toLowerCase().includes(searchLower));
     }
     return posts;
+}
+async function getPostByIdAndUserId(postId, userId) {
+    const cacheKey = `post:${postId}:id:${userId}`;
+    const cachedPosts = cache.get(cacheKey);
+    if (cachedPosts) {
+        console.log(`Cache HIT: ${cacheKey}`);
+        return cachedPosts;
+    }
+    console.log(`Cache MISS: ${cacheKey}`);
+    const post = await (0, post_repository_1.getPostByIdAndUserId)(postId, userId);
+    if (post) {
+        cache.set(cacheKey, post, TASK_CACHE_TTL);
+    }
+    return post;
+}
+async function updateUserPost(postId, userId, updateData) {
+    const validTitle = updateData.title === undefined
+        ? undefined
+        : validateTitle(updateData.title);
+    const post = await (0, post_repository_1.updatePost)(postId, userId, {
+        ...updateData,
+        ...(validTitle === undefined ? {} : { title: validTitle }),
+    });
+    if (!post) {
+        throw new errors_1.AppError(404, "Post not found or you are not authorized to update it");
+    }
+    cache.del(`post:${postId}:id:${userId}`);
+    cache.del("posts:all");
+    return post;
+}
+async function deleteTaskCache(userId, taskId) {
+    await cache.del(`post:id:${userId}`);
+    if (taskId) {
+        await cache.del(`post:${taskId}:id:${userId}`);
+    }
+    console.log(`Cache cleared for userId: ${userId}, taskId: ${taskId || "N/A"}`);
+}
+async function deleteUserPost(userId, postId) {
+    const deleted = await (0, post_repository_1.deletePost)(postId, userId);
+    if (!deleted) {
+        throw new errors_1.AppError(404, "Post not found or you are not authorized to delete it");
+    }
+    await deleteTaskCache(userId, postId);
+    cache.del("posts:all");
 }
 //# sourceMappingURL=post.service.js.map
