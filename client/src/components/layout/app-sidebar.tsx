@@ -10,14 +10,22 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { Home, Settings, User } from "lucide-react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Separator } from "../ui/separator"
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
+import { EllipsisVertical, Home, Settings, User } from "lucide-react"
 import { NavLink } from "react-router-dom"
 
 const menuItems = [
   { title: "STAR of the Day", url: "/SOTD", icon: Home },
   { title: "PALIA ANDROMI", url: "/palia-andromi", icon: User },
   { title: "ELCOVEK", url: "/elcovek", icon: Settings },
- { title: "VIBTEO", url: "/vibtea", icon: Settings },
+  { title: "VIBTEO", url: "/vibtea", icon: Settings },
   { title: "GALERI", url: "/galeri", icon: Settings },
 ]
 
@@ -44,6 +52,7 @@ export function AppSidebar() {
           <span className="font-heading text-lg">Cosmica</span>
         </div>
       </SidebarHeader>
+      <Separator />
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>ARCHIVES</SidebarGroupLabel>
@@ -61,10 +70,37 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+
+      <Separator />
       <SidebarFooter>
-        <span className="px-3 py-2 text-xs text-sidebar-foreground/60">
-          Your workspace
-        </span>
+        <SidebarMenu>
+          <SidebarMenuItem className="w-full m-0">
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <SidebarMenuButton className="flex items-center gap-4 px-2 py-6" />
+                }
+              >
+                <Avatar>
+                  <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
+                  <AvatarFallback>CN</AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col text-left">
+                  <span>John Rey</span>
+                  <span className="text-xs text-muted-foreground">
+                    Explorer Tier
+                  </span>
+                </div>
+                <EllipsisVertical className="size-4 ml-auto" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="top" align="start">
+                <DropdownMenuItem>Account</DropdownMenuItem>
+                <DropdownMenuItem>Billing</DropdownMenuItem>
+                <DropdownMenuItem>Log out</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
   )
