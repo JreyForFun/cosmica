@@ -32,7 +32,7 @@ export function SignupForm({
 
   const { register } = authContextVar
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
         e.preventDefault();
         try {
             if(password !== confirmPassword) {
