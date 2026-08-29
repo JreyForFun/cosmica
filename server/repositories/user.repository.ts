@@ -19,7 +19,7 @@ export async function createUser(
     )
 
     const result = await User.findById(user._id)
-    .select("_id email username favorites createdAt")
+    .select("_id email username favorites photoUrl createdAt")
     .lean<UserTypes>();
     return result ?? null
 }
@@ -27,7 +27,7 @@ export async function createUser(
 export async function findUserByEmailWithPassword(email: string): Promise<DBUserWithPasswordRow | null> {
   // Implementation for finding user by email with password
     const result = await User.findOne({email})
-      .select("_id email username password favorites createdAt")
+      .select("_id email username password photoUrl favorites createdAt")
       .lean<DBUserWithPasswordRow>();
 
     return result ?? null

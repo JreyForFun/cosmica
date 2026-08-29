@@ -25,7 +25,7 @@ const menuItems = [
   { title: "STAR of the Day", url: "/SOTD", icon: Home },
   { title: "PALIA ANDROMI", url: "/palia-andromi", icon: User },
   { title: "ELCOVEK", url: "/elcovek", icon: Settings },
-  { title: "VIBTEO", url: "/vibtea", icon: Settings },
+  { title: "VIBTEO", url: "/vibteo", icon: Settings },
   { title: "GALERI", url: "/galeri", icon: Settings },
 ]
 
@@ -52,6 +52,7 @@ export function AppSidebar() {
           <span className="font-heading text-lg">Cosmica</span>
         </div>
       </SidebarHeader>
+
       <Separator />
       <SidebarContent>
         <SidebarGroup>
@@ -60,9 +61,9 @@ export function AppSidebar() {
             <SidebarMenu>
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton render={<NavLink to={item.url} />}>
-                    <item.icon />
-                    <span className="p-4 text-sm">{item.title}</span>
+                  <SidebarMenuButton render={<NavLink to={item.url} />} className="py-8">
+                    <item.icon className="h-20 w-20 " strokeWidth={1.5}/>
+                    <span className="p-4 text-sm font-semibold">{item.title}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -70,7 +71,22 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-
+      <Separator />
+      <div>
+        <SidebarGroup>
+          <SidebarGroupLabel>OTHERS</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton render={<NavLink to="/about" />} className="py-8">
+                  <Settings className="h-20 w-20 " strokeWidth={1.5}/>
+                  <span className="p-4 text-sm font-semibold">About Cosmica</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </div>
       <Separator />
       <SidebarFooter>
         <SidebarMenu>
