@@ -3,57 +3,107 @@ import axios from "axios";
 import { AuthContext } from "./auth-context";
 
 type User = {
+  _id?: string;
   id?: string;
   username?: string;
   email?: string;
   token?: string;
+  favorites?: string[];
+  photoUrl?: string;
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
 
-  useEffect(() => {
+  const persistAuth = (token?: string, nextUser?: User | null) => {
+    const authToken = token ?? "";
+
+    if (authToken) {
+      localStorage.setItem("token", authToken);
+      axios.defaults.headers.common["Authorization"] = `Bearer ${authToken}`;
+    } else {
+      localStorage.removeItem("token");
+      delete axios.defaults.headers.common["Authorization"];
+    }
+
+    if (nextUser) {
+      setUser(nextUser);
+    }
+  };
+
+  const refreshUser = async () => {
     const token = localStorage.getItem("token");
 
-    if (!token) return;
+    if (!token) {
+      setUser(null);
+      return;
+    }
 
     axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
-    axios
-      .get<{ user: User }>('/api/auth/me')
-      .then((res) => {
-        setUser(res.data.user);
-      })
-      .catch(() => {
-        localStorage.removeItem("token");
-        delete axios.defaults.headers.common["Authorization"];
-        setUser(null);
-      });
+    try {
+      const response = await axios.get<{ user: User }>('/api/auth/me');
+      setUser(response.data.user);
+    } catch {
+      localStorage.removeItem("token");
+      delete axios.defaults.headers.common["Authorization"];
+      setUser(null);
+    }
+  };
+
+  useEffect(() => {
+    void refreshUser();
   }, []);
 
   const login = async (email: string, password: string) => {
-    const res = await axios.post<{ user: User }>('/api/auth/login', {
-      email,
-      password,
-    });
+    try {
+      const res = await axios.post<{ accessToken?: string; token?: string; user?: User }>('/api/auth/login', {
+        email,
+        password,
+      });
 
-    const nextUser = res.data.user;
-    localStorage.setItem("token", nextUser.token ?? "");
-    axios.defaults.headers.common["Authorization"] = `Bearer ${nextUser.token ?? ""}`;
-    setUser(nextUser);
+      const accessToken = res.data.accessToken ?? res.data.token ?? "";
+      if (!accessToken) {
+        throw new Error('Login failed: no access token returned by server');
+      }
+
+      persistAuth(accessToken);
+      await refreshUser();
+    } catch (error) {
+      const message = axios.isAxiosError(error)
+        ? (error.response?.data?.message ?? error.message)
+        : error instanceof Error
+          ? error.message
+          : 'Login failed';
+
+      throw new Error(message);
+    }
   };
 
   const register = async (username: string, email: string, password: string) => {
-    const res = await axios.post<{ user: User }>('/api/auth/register', {
-      username,
-      email,
-      password,
-    });
+    try {
+      const res = await axios.post<{ accessToken?: string; token?: string; user?: User }>('/api/auth/register', {
+        username,
+        email,
+        password,
+      });
 
-    const nextUser = res.data.user;
-    localStorage.setItem("token", nextUser.token ?? "");
-    axios.defaults.headers.common["Authorization"] = `Bearer ${nextUser.token ?? ""}`;
-    setUser(nextUser);
+      const accessToken = res.data.accessToken ?? res.data.token ?? "";
+      if (!accessToken) {
+        throw new Error('Registration failed: no access token returned by server');
+      }
+
+      persistAuth(accessToken, res.data.user ?? null);
+      await refreshUser();
+    } catch (error) {
+      const message = axios.isAxiosError(error)
+        ? (error.response?.data?.message ?? error.message)
+        : error instanceof Error
+          ? error.message
+          : 'Registration failed';
+
+      throw new Error(message);
+    }
   };
 
   const logout = () => {
@@ -63,7 +113,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout }}>
+    <AuthContext.Provider value={{ user, login, register, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

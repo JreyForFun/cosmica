@@ -17,9 +17,7 @@ async function createUserPostHandler(req, res, next) {
         const post = await (0, post_service_1.createUserPost)(title, tags, description, category, photoUrl, timeCaptured, req.user.userId);
         res.status(201).json({
             success: true,
-            data: {
-                post,
-            },
+            post
         });
     }
     catch (error) {

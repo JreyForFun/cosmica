@@ -4,7 +4,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.findUserByEmail = findUserByEmail;
+exports.findUserById = findUserById;
 exports.createUser = createUser;
+exports.updateUserFavorites = updateUserFavorites;
 exports.findUserByEmailWithPassword = findUserByEmailWithPassword;
 const user_model_1 = __importDefault(require("../models/user.model"));
 async function findUserByEmail(email) {
@@ -14,9 +16,21 @@ async function findUserByEmail(email) {
         .lean();
     return result ?? null;
 }
+async function findUserById(userId) {
+    const result = await user_model_1.default.findById(userId)
+        .select("_id email username photoUrl favorites createdAt")
+        .lean();
+    return result ?? null;
+}
 async function createUser(username, email, passwordHash) {
     const user = await user_model_1.default.create({ username, email, password: passwordHash });
     const result = await user_model_1.default.findById(user._id)
+        .select("_id email username favorites photoUrl createdAt")
+        .lean();
+    return result ?? null;
+}
+async function updateUserFavorites(userId, favorites) {
+    const result = await user_model_1.default.findByIdAndUpdate(userId, { favorites }, { new: true })
         .select("_id email username favorites createdAt")
         .lean();
     return result ?? null;
@@ -24,7 +38,7 @@ async function createUser(username, email, passwordHash) {
 async function findUserByEmailWithPassword(email) {
     // Implementation for finding user by email with password
     const result = await user_model_1.default.findOne({ email })
-        .select("_id email username password favorites createdAt")
+        .select("_id email username password photoUrl favorites createdAt")
         .lean();
     return result ?? null;
 }

@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.registerUser = registerUser;
 exports.loginUser = loginUser;
+exports.toggleFavorite = toggleFavorite;
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const errors_1 = require("../lib/errors");
 const jwt_1 = require("../lib/jwt");
@@ -13,16 +14,19 @@ async function registerUser(username, email, password) {
     if (!email || !username || !password) {
         throw new errors_1.AppError(400, "Email, username and password are required");
     }
-    if (password.length < 6) {
-        throw new errors_1.AppError(400, 'Password must be atleast 6 character');
+    if (password.length < 8) {
+        throw new errors_1.AppError(400, 'Password must be at least 8 characters');
     }
     const normalizeEmail = email.toLowerCase().trim();
     const existingUser = await (0, user_repository_1.findUserByEmail)(normalizeEmail);
     if (existingUser) {
         throw new errors_1.AppError(400, "Email already exists");
     }
-    //const passwordHash = await bcrypt.hash(password, 10);
-    await (0, user_repository_1.createUser)(username, normalizeEmail, password);
+    const createdUser = await (0, user_repository_1.createUser)(username, normalizeEmail, password);
+    if (!createdUser) {
+        throw new errors_1.AppError(500, 'Unable to create user');
+    }
+    return createdUser;
 }
 async function loginUser(email, password) {
     if (!email || !password) {
@@ -38,7 +42,34 @@ async function loginUser(email, password) {
         throw new errors_1.AppError(401, "Invalid email or password");
     }
     const accessToken = (0, jwt_1.signAccessToken)({ userId: user._id, email: user.email });
-    return { accessToken };
+    return {
+        accessToken,
+        user: {
+            _id: user._id,
+            email: user.email,
+            username: user.username,
+            favorites: user.favorites ?? [],
+            createdAt: user.createdAt,
+        },
+    };
+}
+async function toggleFavorite(userId, favorite) {
+    const normalizedFavorite = favorite?.trim();
+    if (!normalizedFavorite) {
+        throw new errors_1.AppError(400, 'Favorite value is required');
+    }
+    const user = await (0, user_repository_1.findUserById)(userId);
+    if (!user) {
+        throw new errors_1.AppError(404, 'User not found');
+    }
+    const currentFavorites = user.favorites ?? [];
+    const nextFavorites = currentFavorites.includes(normalizedFavorite)
+        ? currentFavorites.filter((item) => item !== normalizedFavorite)
+        : [...currentFavorites, normalizedFavorite];
+    const updatedUser = await (0, user_repository_1.updateUserFavorites)(userId, nextFavorites);
+    return {
+        favorites: updatedUser?.favorites ?? nextFavorites,
+    };
 }
 function createAccessTokenForUser(user) {
     return (0, jwt_1.signAccessToken)({
