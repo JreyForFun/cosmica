@@ -1,9 +1,9 @@
 import { Outlet } from "react-router-dom"
 import {
   SidebarProvider,
-  SidebarTrigger,
   SidebarInset,
 } from "@/components/ui/sidebar"
+import { Header } from "./header"
 import { AppSidebar } from "./app-sidebar"
 
 export default function Layout() {
@@ -12,7 +12,7 @@ export default function Layout() {
       <AppSidebar />
 
       <SidebarInset>
-        <SidebarTrigger />
+        <Header />
         <Outlet />
       </SidebarInset>
     </SidebarProvider>

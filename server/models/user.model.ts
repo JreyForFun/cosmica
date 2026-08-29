@@ -19,7 +19,10 @@ const userSchema = new mongoose.Schema({
     },
     favorites: [{
         type: String,
-    }]
+    }],
+    photoUrl: {
+        type: String
+    }
 }, {
     timestamps: true
 });

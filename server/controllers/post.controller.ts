@@ -33,9 +33,7 @@ export async function createUserPostHandler(
 
     res.status(201).json({
       success: true,
-      data: {
-        post,
-      },
+        post
     });
   } catch (error) {
     next(error);
