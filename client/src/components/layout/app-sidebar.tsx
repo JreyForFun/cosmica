@@ -18,8 +18,10 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Separator } from "../ui/separator"
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
-import { EllipsisVertical, Home, Settings, User } from "lucide-react"
+import { EllipsisVertical, Home, LogOut, Settings, User } from "lucide-react"
 import { NavLink } from "react-router-dom"
+import { useContext } from "react"
+import { AuthContext } from "@/context/auth-context"
 
 const menuItems = [
   { title: "STAR of the Day", url: "/SOTD", icon: Home },
@@ -30,6 +32,15 @@ const menuItems = [
 ]
 
 export function AppSidebar() {
+  const auth = useContext(AuthContext)
+  const user = auth?.user
+  const displayName = user?.username?.trim() || "Guest"
+  const avatarLetter = displayName.charAt(0).toUpperCase()
+
+  const handleLogout = () => {
+    auth?.logout()
+  }
+
   return (
     <Sidebar>
       <SidebarHeader>
@@ -94,25 +105,27 @@ export function AppSidebar() {
             <DropdownMenu>
               <DropdownMenuTrigger
                 render={
-                  <SidebarMenuButton className="flex items-center gap-4 px-2 py-6" />
+                  <SidebarMenuButton className="flex items-center gap-3 px-2 py-6" />
                 }
               >
-                <Avatar>
-                  <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-                  <AvatarFallback>CN</AvatarFallback>
+                <Avatar className="h-9 w-9">
+                  {user?.photoUrl ? (
+                    <AvatarImage src={user.photoUrl} alt={displayName} />
+                  ) : null}
+                  <AvatarFallback className="bg-primary text-primary-foreground">
+                    {avatarLetter}
+                  </AvatarFallback>
                 </Avatar>
-                <div className="flex flex-col text-left">
-                  <span>John Rey</span>
-                  <span className="text-xs text-muted-foreground">
-                    Explorer Tier
-                  </span>
+                <div className="flex min-w-0 flex-col text-left">
+                  <span className="truncate text-sm font-medium">{displayName}</span>
                 </div>
-                <EllipsisVertical className="size-4 ml-auto" />
+                <EllipsisVertical className="ml-auto size-4" />
               </DropdownMenuTrigger>
               <DropdownMenuContent side="top" align="start">
-                <DropdownMenuItem>Account</DropdownMenuItem>
-                <DropdownMenuItem>Billing</DropdownMenuItem>
-                <DropdownMenuItem>Log out</DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Log out
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarMenuItem>

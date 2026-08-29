@@ -9,6 +9,14 @@ export async function findUserByEmail(email: string): Promise<UserTypes | null> 
   return result ?? null;
 }
 
+export async function findUserById(userId: string): Promise<UserTypes | null> {
+  const result = await User.findById(userId)
+    .select("_id email username photoUrl favorites createdAt")
+    .lean<UserTypes>();
+
+  return result ?? null;
+}
+
 export async function createUser(
     username: string,
     email: string,
@@ -22,6 +30,21 @@ export async function createUser(
     .select("_id email username favorites photoUrl createdAt")
     .lean<UserTypes>();
     return result ?? null
+}
+
+export async function updateUserFavorites(
+  userId: string,
+  favorites: string[],
+): Promise<UserTypes | null> {
+  const result = await User.findByIdAndUpdate(
+    userId,
+    { favorites },
+    { new: true },
+  )
+    .select("_id email username favorites createdAt")
+    .lean<UserTypes>();
+
+  return result ?? null;
 }
 
 export async function findUserByEmailWithPassword(email: string): Promise<DBUserWithPasswordRow | null> {

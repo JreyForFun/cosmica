@@ -19,6 +19,8 @@ export function LoginForm({
 }: React.ComponentProps<"div">) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const authContextVar = useContext(AuthContext);
   const navigate = useNavigate()
@@ -31,11 +33,19 @@ export function LoginForm({
 
   const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
         e.preventDefault();
+        if (isSubmitting) return;
+
+        setSubmitError(null);
+        setIsSubmitting(true);
         try {
             await login(email, password)
             navigate('/')
-        } catch (e){
-            console.error('Register failed', e)
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Login failed';
+            setSubmitError(message);
+            console.error('Login failed', error)
+        } finally {
+            setIsSubmitting(false);
         }
     }
 
@@ -57,6 +67,7 @@ export function LoginForm({
                   id="email"
                   type="email"
                   placeholder="m@example.com"
+                  autoComplete="email"
                   required
 
                   value={email}
@@ -72,12 +83,18 @@ export function LoginForm({
                 </div>
                 <Input id="password"
                 type="password"
+                autoComplete="current-password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}/>
               </Field>
               <Field>
-                <Button type="submit">Login</Button>
+                {submitError ? (
+                  <p className="text-sm text-destructive">{submitError}</p>
+                ) : null}
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? 'Logging in...' : 'Login'}
+                </Button>
               </Field>
               <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
                 Or continue with
@@ -93,7 +110,7 @@ export function LoginForm({
                   <span className="sr-only">Login with Google</span>
                 </Button>
                 <Button variant="outline" type="button">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-zodiac-ophiuchus-icon lucide-zodiac-ophiuchus">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-zodiac-ophiuchus-icon lucide-zodiac-ophiuchus">
                   <path d="M3 10A6.06 6.06 0 0 1 12 10 A6.06 6.06 0 0 0 21 10"/>
                   <path d="M6 3v12a6 6 0 0 0 12 0V3"/>
                   </svg>

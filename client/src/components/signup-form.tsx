@@ -22,6 +22,8 @@ export function SignupForm({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const authContextVar = useContext(AuthContext);
   const navigate = useNavigate()
@@ -34,14 +36,22 @@ export function SignupForm({
 
   const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
         e.preventDefault();
+        if (isSubmitting) return;
+
+        setSubmitError(null);
+        setIsSubmitting(true);
         try {
             if(password !== confirmPassword) {
                 throw new Error('Passwords do not match')
             }
             await register(username, email, password)
             navigate('/')
-        } catch (e){
-            console.error('Register failed', e)
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Register failed';
+            setSubmitError(message);
+            console.error('Register failed', error)
+        } finally {
+            setIsSubmitting(false);
         }
     }
 
@@ -59,6 +69,7 @@ export function SignupForm({
                 <Input
                 id="username"
                 type="text"
+                autoComplete="username"
                 placeholder="Ex.: stardestroyer123"
                 className="p-0"
                 required
@@ -74,6 +85,7 @@ export function SignupForm({
                 <Input
                   id="email"
                   type="email"
+                  autoComplete="email"
                   placeholder="pengging@cosmica.com"
                   className="p-0"
                   required
@@ -90,13 +102,13 @@ export function SignupForm({
                 <Field className="grid grid-cols-2 gap-">
                   <Field>
                     <FieldLabel htmlFor="password">Password</FieldLabel>
-                    <Input id="password" type="password" minLength={8} required value={password} onChange={(e) => setPassword(e.target.value)}/>
+                    <Input id="password" type="password" autoComplete="new-password" minLength={8} required value={password} onChange={(e) => setPassword(e.target.value)}/>
                   </Field>
                   <Field>
                     <FieldLabel htmlFor="confirm-password">
                       Confirm Password
                     </FieldLabel>
-                    <Input id="confirm-password" type="password" minLength={8} required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+                    <Input id="confirm-password" type="password" autoComplete="new-password" minLength={8} required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
                   </Field>
                 </Field>
                 <FieldDescription className="flex flex-col">{password !== confirmPassword && (
@@ -108,14 +120,19 @@ export function SignupForm({
                 </FieldDescription>
               </Field>
               <Field>
-                <Button type="submit">Create Account</Button>
+                {submitError ? (
+                  <p className="text-sm text-destructive">{submitError}</p>
+                ) : null}
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? 'Creating account...' : 'Create Account'}
+                </Button>
               </Field>
               <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card ">
                 Or continue with
               </FieldSeparator>
               <Field className="grid grid-cols-2 gap-4 p-0">
                 <Button variant="outline" type="button">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-zodiac-ophiuchus-icon lucide-zodiac-ophiuchus">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-zodiac-ophiuchus-icon lucide-zodiac-ophiuchus">
                   <path d="M3 10A6.06 6.06 0 0 1 12 10 A6.06 6.06 0 0 0 21 10"/>
                   <path d="M6 3v12a6 6 0 0 0 12 0V3"/>
                   </svg>
