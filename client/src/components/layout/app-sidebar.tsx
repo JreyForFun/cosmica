@@ -18,13 +18,13 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Separator } from "../ui/separator"
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
-import { EllipsisVertical, Home, LogOut, Settings, User } from "lucide-react"
+import { EllipsisVertical, LogOut, Settings, User, Astroid } from "lucide-react"
 import { NavLink } from "react-router-dom"
 import { useContext } from "react"
 import { AuthContext } from "@/context/auth-context"
 
 const menuItems = [
-  { title: "STAR of the Day", url: "/SOTD", icon: Home },
+  { title: "STAR of the Day", url: "/SOTD", icon: Astroid },
   { title: "PALIA ANDROMI", url: "/palia-andromi", icon: User },
   { title: "ELCOVEK", url: "/elcovek", icon: Settings },
   { title: "VIBTEO", url: "/vibteo", icon: Settings },
