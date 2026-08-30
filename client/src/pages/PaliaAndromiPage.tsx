@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate,  } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -127,6 +127,21 @@ export const PaliaAndromi = () => {
   return (
     <div className="max-w-7xl p-4">
       <div className="rounded-xl border bg-white p-6 shadow-sm dark:bg-zinc-900">
+        <div className="flex flex-rows justify-between items-center mb-4">
+          <div>
+            <h1 className="mb-4 text-3xl font-bold">Palia Andromi</h1>
+            <p className="mb-4 text-sm uppercase tracking-[0.2em] text-zinc-500">
+              Where past stars gather to show it's cosmica
+            </p>
+          </div>
+          <div>
+             <div>
+            <Button variant={"default"} onClick={() => navigate("/SOTD")}>
+              GO TO CURRENT STAR OF THE DAY
+            </Button>
+          </div>
+          </div>
+        </div>
         {loading && cards.length === 0 && (
           <p className="text-sm text-zinc-500">Loading Palia Andromi Cards...</p>
         )}
@@ -139,24 +154,24 @@ export const PaliaAndromi = () => {
           {cards.map((card, index) => (
             <Card
               key={`${card.date ?? index}`}
-              className="relative mx-auto w-[250px] h-[360px] overflow-hidden border-0 bg-white pt-0 shadow-sm dark:bg-zinc-950"
+              className="mx-auto flex w-full max-w-[260px] flex-col overflow-hidden rounded-t-xl border-0 bg-white pt-0 shadow-sm dark:bg-zinc-950"
             >
               <img
                 src={card.url || "https://avatar.vercel.sh/shadcn1"}
                 alt={card.title || "APOD image"}
-                className="relative z-20 h-[180px] w-full object-cover brightness-100 dark:brightness-90"
+                className="h-[190px] w-full object-cover brightness-100 dark:brightness-90"
               />
-              <CardHeader className="relative z-40 h-[120px] overflow-hidden p-3">
+              <CardHeader className="flex min-h-[80px] flex-col gap-2 p-3">
                 <CardAction>
                   <Badge variant="secondary" className="text-[10px]">
                     {card.date || "Featured"}
                   </Badge>
                 </CardAction>
-                <CardTitle className="line-clamp-2 text-sm leading-5">
+                <CardTitle className="line-clamp-2 text-sm leading-5 text-zinc-900 dark:text-zinc-100">
                   {card.title || "Astronomy Picture"}
                 </CardTitle>
               </CardHeader>
-              <CardFooter className="relative z-40 mt-auto p-3 pt-0">
+              <CardFooter className="mt-auto p-3 pt-0">
                 <Button
                   type="button"
                   className="h-9 w-full text-xs"

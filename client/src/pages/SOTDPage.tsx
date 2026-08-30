@@ -2,6 +2,7 @@ import { useContext, useEffect, useState } from "react";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { AuthContext } from "@/context/auth-context";
+import { useNavigate } from "react-router-dom";
 
 type ApodData = {
   copyright?: string,
@@ -20,6 +21,7 @@ export const SOTDPage = () => {
   const [savingFavorite, setSavingFavorite] = useState(false);
   const [favoriteError, setFavoriteError] = useState<string | null>(null);
   const auth = useContext(AuthContext);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchSotd = async () => {
@@ -153,6 +155,7 @@ export const SOTDPage = () => {
             variant={isFavorite ? "secondary" : "default"}
             onClick={handleToggleFavorite}
             disabled={savingFavorite || !auth?.user}
+            className="cursor-pointer"
           >
             {savingFavorite
               ? "Saving..."
@@ -164,6 +167,9 @@ export const SOTDPage = () => {
           {favoriteError ? (
             <span className="text-sm text-red-600">{favoriteError}</span>
           ) : null}
+          <Button variant={"default"} onClick={() => navigate("/palia-andromi")} className="cursor-pointer">
+              SEE PAST COSMICA STARS
+            </Button>
         </div>
       </div>
     </div>

@@ -1,6 +1,8 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { AuthContext } from "@/context/auth-context";
+import axios from "axios";
 
 type ApodData = {
   copyright?: string;
@@ -21,6 +23,9 @@ export const CosmicaDetailPage = () => {
   );
   const [loading, setLoading] = useState(!event && Boolean(date));
   const [error, setError] = useState<string | null>(null);
+  const [savingFavorite, setSavingFavorite] = useState(false);
+  const [favoriteError, setFavoriteError] = useState<string | null>(null);
+  const auth = useContext(AuthContext);
 
   useEffect(() => {
     if (event || !date) {
@@ -51,6 +56,34 @@ export const CosmicaDetailPage = () => {
     fetchEvent();
   }, [date, event]);
 
+  const isFavorite = Boolean(
+    event?.date && (auth?.user?.favorites ?? []).includes(event.date),
+  );
+
+  const handleToggleFavorite = async () => {
+    if (!auth?.user || !event?.date) {
+      return;
+    }
+
+    setSavingFavorite(true);
+    setFavoriteError(null);
+
+    try {
+      await axios.patch("/api/auth/favorites", { favorite: event.date });
+      await auth.refreshUser();
+    } catch (err: unknown) {
+      const message =
+        typeof err === "object" && err !== null && "response" in err
+          ? (err as { response?: { data?: { message?: string } } }).response?.data
+              ?.message || "Could not update favorites."
+          : "Could not update favorites.";
+
+      setFavoriteError(message);
+    } finally {
+      setSavingFavorite(false);
+    }
+  };
+
   if (loading) {
     return <div className="mx-auto max-w-4xl p-6">Loading event...</div>;
   }
@@ -62,6 +95,21 @@ export const CosmicaDetailPage = () => {
         <Button className="mt-4" onClick={() => navigate(-1)}>
           Go back
         </Button>
+        <Button
+            variant={isFavorite ? "secondary" : "default"}
+            onClick={handleToggleFavorite}
+            disabled={savingFavorite || !auth?.user}
+          >
+            {savingFavorite
+              ? "Saving..."
+              : isFavorite
+                ? "Remove from Favorites"
+                : "Add to Favorites"}
+          </Button>
+
+          {favoriteError ? (
+            <span className="text-sm text-red-600">{favoriteError}</span>
+          ) : null}
       </div>
     );
   }
@@ -77,12 +125,33 @@ export const CosmicaDetailPage = () => {
     );
   }
 
+const handleClick = () => {
+  handleToggleFavorite();
+  window.open(event.hdurl, "_blank", "noopener,noreferrer");
+};
+
   return (
-    <div className="mx-auto max-w-4xl p-4">
-      <div className="mb-4">
+    <div className="mx-auto p-4">
+      <div className="mb-4 flex flex-row items-center justify-between">
         <Button variant="outline" onClick={() => navigate(-1)}>
           Back
         </Button>
+
+        <Button
+            variant={isFavorite ? "secondary" : "default"}
+            onClick={handleToggleFavorite}
+            disabled={savingFavorite || !auth?.user}
+          >
+            {savingFavorite
+              ? "Saving..."
+              : isFavorite
+                ? "Remove from Favorites"
+                : "Add to Favorites"}
+          </Button>
+
+          {favoriteError ? (
+            <span className="text-sm text-red-600">{favoriteError}</span>
+          ) : null}
       </div>
 
       <div className="rounded-xl border bg-white p-6 shadow-sm dark:bg-zinc-900">
@@ -128,6 +197,16 @@ export const CosmicaDetailPage = () => {
               })}
           </div>
         )}
+
+        <div className="mt-6 flex items-center gap-3">
+          <Button
+            variant={"default"}
+            onClick={handleClick}
+            disabled={savingFavorite || !auth?.user}
+          >
+            PHOTO URL
+          </Button>
+        </div>
       </div>
     </div>
   );
