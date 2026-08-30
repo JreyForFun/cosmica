@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -47,6 +48,7 @@ export const PaliaAndromi = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cards, setCards] = useState<ApodData[]>([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchInitialCards = async () => {
@@ -155,7 +157,17 @@ export const PaliaAndromi = () => {
                 </CardTitle>
               </CardHeader>
               <CardFooter className="relative z-40 mt-auto p-3 pt-0">
-                <Button className="w-full h-9 text-xs">View Event</Button>
+                <Button
+                  type="button"
+                  className="h-9 w-full text-xs"
+                  onClick={() =>
+                    navigate(`/cosmica/${encodeURIComponent(card.date ?? String(index))}`, {
+                      state: { event: card },
+                    })
+                  }
+                >
+                  View Event
+                </Button>
               </CardFooter>
             </Card>
           ))}

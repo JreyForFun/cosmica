@@ -3,6 +3,7 @@ import { Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom"
 import './App.css'
 import Layout from './components/layout/layout'
 import { AuthContext } from './context/auth-context'
+import { CosmicaDetailPage } from './pages/CosmicaDetailPage'
 import { ElcovekPage } from './pages/ElcovekPage'
 import { LoginPage } from './pages/LoginPage'
 import { PaliaAndromi } from './pages/PaliaAndromiPage'
@@ -32,6 +33,7 @@ function App() {
           <Route path="/" element={<SOTDPage />} />
           <Route path="/SOTD" element={<SOTDPage />} />
           <Route path="/palia-andromi" element={<PaliaAndromi />} />
+          <Route path="/cosmica/:date" element={<CosmicaDetailPage />} />
           <Route path="/elcovek" element={<ElcovekPage />} />
           <Route path="/vibteo" element={<VibteoPage />} />
           <Route path="/galeri" element={<h1>Settings</h1>} />

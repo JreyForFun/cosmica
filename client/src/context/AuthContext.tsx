@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import axios from "axios";
 import { AuthContext } from "./auth-context";
 
@@ -50,10 +50,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(null);
     }
   };
-
-  useEffect(() => {
-    void refreshUser();
-  }, []);
 
   const login = async (email: string, password: string) => {
     try {
