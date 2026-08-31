@@ -18,17 +18,17 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Separator } from "../ui/separator"
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
-import { EllipsisVertical, LogOut, Settings, User, Astroid } from "lucide-react"
+import { EllipsisVertical, LogOut, Settings, Astroid, Layers2, Film, View, BookMarked, Info} from "lucide-react"
 import { NavLink } from "react-router-dom"
 import { useContext } from "react"
 import { AuthContext } from "@/context/auth-context"
 
 const menuItems = [
   { title: "STAR of the Day", url: "/SOTD", icon: Astroid },
-  { title: "PALIA ANDROMI", url: "/palia-andromi", icon: User },
-  { title: "ELCOVEK", url: "/elcovek", icon: Settings },
-  { title: "VIBTEO", url: "/vibteo", icon: Settings },
-  { title: "GALERI", url: "/galeri", icon: Settings },
+  { title: "PALIA ANDROMI", url: "/palia-andromi", icon: Layers2 },
+  { title: "ELCOVEK", url: "/elcovek", icon: View },
+  { title: "VIBTEO", url: "/vibteo", icon: Film },
+  { title: "GALERI", url: "/galeri", icon: BookMarked },
 ]
 
 export function AppSidebar() {
@@ -90,7 +90,7 @@ export function AppSidebar() {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton render={<NavLink to="/about" />} className="py-8">
-                  <Settings className="h-20 w-20 " strokeWidth={1.5}/>
+                  <Info className="h-20 w-20 " strokeWidth={1.5}/>
                   <span className="p-4 text-sm font-semibold">About Cosmica</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>

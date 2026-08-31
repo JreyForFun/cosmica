@@ -131,7 +131,7 @@ export const PaliaAndromi = () => {
           <div>
             <h1 className="mb-4 text-3xl font-bold">Palia Andromi</h1>
             <p className="mb-4 text-sm uppercase tracking-[0.2em] text-zinc-500">
-              Where past stars gather to show it's cosmica
+              Where past stars gather to show it's <strong className="text-orange-500">cosmica</strong>
             </p>
           </div>
           <div>
