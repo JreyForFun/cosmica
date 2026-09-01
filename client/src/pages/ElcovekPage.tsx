@@ -13,6 +13,17 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+
 
 type NasaImageItem = {
   data?: Array<{ title?: string; description?: string , photographer?: string; secondary_creator?: string; date_created?: string }>;
@@ -191,15 +202,22 @@ export const ElcovekPage = () => {
                         ? "Remove favorite"
                         : "Add to favorites"}
                   </Button>
-                  <Button
-                    type="button"
-                    className="h-9 w-full text-xs"
-                    onClick={() =>
-                      navigate(`/cosmica/${encodeURIComponent(meta?.title ?? String(index))}`)
-                    }
-                  >
-                    FULL DETAILS
-                  </Button>
+                  <Dialog>
+                      <DialogTrigger render={<Button variant="default" className="w-full">Open Dialog</Button>} />
+                      <DialogContent className="w-[min(92vw,1000px)] max-w-none sm:max-w-[1400px]">
+                        <DialogHeader>
+                          <DialogTitle>{meta?.title}</DialogTitle>
+                          <DialogDescription>
+                            {description}
+                          </DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter>
+                          <Button type="button">COPY DATA (JSON)</Button>
+                          <Button type="button">DOWNLOAD IMAGE</Button>
+                          <DialogClose render={<Button variant="outline">CLOSE</Button>} />
+                        </DialogFooter>
+                      </DialogContent>
+                  </Dialog>
                 </CardFooter>
               </Card>
             );
