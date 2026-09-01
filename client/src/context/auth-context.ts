@@ -1,12 +1,18 @@
 import { createContext } from "react";
 
+type FavoriteMap = {
+  apod?: string[];
+  elcovek?: string[];
+  vibteo?: string[];
+};
+
 type User = {
   _id?: string;
   id?: string;
   username?: string;
   email?: string;
   token?: string;
-  favorites?: string[];
+  favorites?: FavoriteMap;
   photoUrl?: string;
 };
 

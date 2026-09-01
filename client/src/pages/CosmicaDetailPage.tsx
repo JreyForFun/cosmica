@@ -57,7 +57,7 @@ export const CosmicaDetailPage = () => {
   }, [date, event]);
 
   const isFavorite = Boolean(
-    event?.date && (auth?.user?.favorites ?? []).includes(event.date),
+    event?.date && (auth?.user?.favorites?.apod ?? []).includes(event.date),
   );
 
   const handleToggleFavorite = async () => {
@@ -69,7 +69,7 @@ export const CosmicaDetailPage = () => {
     setFavoriteError(null);
 
     try {
-      await axios.patch("/api/auth/favorites", { favorite: event.date });
+      await axios.patch("/api/auth/favorites", { favorite: event.date, category: "apod" });
       await auth.refreshUser();
     } catch (err: unknown) {
       const message =

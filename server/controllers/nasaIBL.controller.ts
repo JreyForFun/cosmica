@@ -8,9 +8,7 @@ export async function getNasaIBL(req: Request, res: Response, next: NextFunction
     const page = typeof req.query.page === "string" ? parseInt(req.query.page) : 1;
     const pageSize = typeof req.query.pageSize === "string" ? parseInt(req.query.pageSize) : 10;
 
-    if (!query) {
-      throw new AppError(400, "query is required");
-    }
+    if (!query) throw new AppError(400, "query is required");
 
     const images = await fetchNasaIBL(query, page, pageSize);
     if (!images) throw new AppError(500, "Failed to fetch images");

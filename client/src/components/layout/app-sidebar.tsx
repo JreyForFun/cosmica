@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Separator } from "../ui/separator"
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
-import { EllipsisVertical, LogOut, Settings, Astroid, Layers2, Film, View, BookMarked, Info} from "lucide-react"
+import { EllipsisVertical, LogOut, Astroid, Layers2, Film, View, BookMarked, Info} from "lucide-react"
 import { NavLink } from "react-router-dom"
 import { useContext } from "react"
 import { AuthContext } from "@/context/auth-context"

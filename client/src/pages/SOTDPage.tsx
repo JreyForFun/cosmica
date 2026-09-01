@@ -58,7 +58,7 @@ export const SOTDPage = () => {
   }, []);
 
   const isFavorite = Boolean(
-    sotd?.date && (auth?.user?.favorites ?? []).includes(sotd.date),
+    sotd?.date && (auth?.user?.favorites?.apod ?? []).includes(sotd.date),
   );
 
   const handleToggleFavorite = async () => {
@@ -70,7 +70,7 @@ export const SOTDPage = () => {
     setFavoriteError(null);
 
     try {
-      await axios.patch("/api/auth/favorites", { favorite: sotd.date });
+      await axios.patch("/api/auth/favorites", { favorite: sotd.date, category: "apod" });
       await auth.refreshUser();
     } catch (err: unknown) {
       const message =
@@ -114,7 +114,7 @@ export const SOTDPage = () => {
         <p className="mb-2 text-sm uppercase tracking-[0.2em] text-zinc-500">
           {sotd.copyright
             ? `Owner of the image: ${sotd.copyright}`
-            : "Astronomy Picture of the Day"}
+            : "Owner of the image: UNKNOWN"}
         </p>
 
         {sotd.url && (
