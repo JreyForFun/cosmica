@@ -23,11 +23,80 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { Separator } from "@/components/ui/separator";
 
 
 type NasaImageItem = {
-  data?: Array<{ title?: string; description?: string , photographer?: string; secondary_creator?: string; date_created?: string }>;
+  href?: string;
+  data?: Array<{ title?: string; description?: string , photographer?: string; secondary_creator?: string; date_created?: string; nasa_id?: string, center?: string }>;
   links?: Array<{ href?: string }>;
+};
+
+type NasaMetadata = {
+  title?: string;
+  description?: string;
+  photographer?: string;
+  secondary_creator?: string;
+  date_created?: string;
+  nasa_id?: string;
+  center?: string;
+};
+
+const downloadImage = async (meta: NasaMetadata | undefined, imageUrl: string | undefined) => {
+  if (!meta || !imageUrl) {
+    alert("Image data not available");
+    return;
+  }
+  try {
+    const response = await fetch(imageUrl);
+    if (!response.ok) {
+      alert("Failed to download image");
+      return;
+    }
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    const filename = `${meta?.nasa_id || meta?.title || "image"}${getImageExtension(imageUrl)}`;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error("Download error:", error);
+    alert("Failed to download image file");
+  }
+};
+
+const getImageExtension = (url: string): string => {
+  const match = url.match(/\.[0-9a-z]+(?=(\?|$))/i);
+  return match ? match[0] : ".jpg";
+};
+
+const downloadFile = async (fileUrl: string | undefined, filename: string) => {
+  if (!fileUrl) {
+    alert(`${filename} not available`);
+    return;
+  }
+  try {
+    const response = await fetch(fileUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to download ${filename}`);
+    }
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error("Download error:", error);
+    alert(`Failed to download ${filename}`);
+  }
 };
 
 export const ElcovekPage = () => {
@@ -114,7 +183,7 @@ export const ElcovekPage = () => {
             </p>
           </div>
           <div>
-            <Button variant="default" onClick={() => navigate("/vibteo")}>
+            <Button variant="default" className="cursor-pointer" onClick={() => navigate("/vibteo")}>
               VIEW THRU PRESERVED TAPES
             </Button>
           </div>
@@ -143,7 +212,7 @@ export const ElcovekPage = () => {
               placeholder="Search NASA images"
             />
           </div>
-          <Button type="submit" variant="default" className="shrink-0">
+          <Button type="submit" variant="default" className="shrink-0 cursor-pointer">
             Search
           </Button>
         </form>
@@ -154,6 +223,7 @@ export const ElcovekPage = () => {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-1 lg:grid-cols-1 xl:grid-cols-2">
           {cards.map((card, index) => {
             const meta = card.data?.[0];
+            const jsonUrl = card.href
             const imageUrl = card.links?.[0]?.href;
             const description = meta?.description;
             const trimmedDescription = description?.slice(0, 210) ?? "Description";
@@ -161,17 +231,17 @@ export const ElcovekPage = () => {
             return (
               <Card
                 key={`${meta?.title ?? "image"}-${index}`}
-                className="mx-auto flex w-full max-h-[600px] max-w-[700px] flex-col overflow-hidden border-0 bg-white pt-0 shadow-sm dark:bg-zinc-950"
+                className="mx-auto flex w-full max-h-150 max-w-175 flex-col overflow-hidden border-0 bg-white pt-0 shadow-sm dark:bg-zinc-950"
               >
                 {imageUrl ? (
                   <img
                     src={imageUrl}
                     alt={meta?.title ?? "NASA image"}
-                    className="h-[290px] w-full object-cover brightness-100 dark:brightness-90"
+                    className="h-72.5 w-full object-cover brightness-100 dark:brightness-90"
                   />
                 ) : null}
 
-                <CardHeader className="flex min-h-[80px] flex-col gap-2 p-3">
+                <CardHeader className="flex min-h-20 flex-col gap-2 p-3">
                   <CardAction>
                     <Badge variant="secondary" className="text-[10px] mr-2">
                       {meta?.photographer || meta?.secondary_creator ? meta.photographer || meta.secondary_creator : "Image"}
@@ -192,7 +262,7 @@ export const ElcovekPage = () => {
                 <CardFooter className="grid grid-cols-1 gap-4 sm:grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 mt-auto p-3 pt-0">
                   <Button
                     type="button"
-                    className="h-9 w-full text-xs"
+                    className="h-9 w-full text-xs cursor-pointer"
                     onClick={() => handleToggleFavorite(meta?.title ?? String(index))}
                     disabled={savingFavorite[meta?.title ?? String(index)] || !auth?.user}
                   >
@@ -203,17 +273,63 @@ export const ElcovekPage = () => {
                         : "Add to favorites"}
                   </Button>
                   <Dialog>
-                      <DialogTrigger render={<Button variant="default" className="w-full">Open Dialog</Button>} />
-                      <DialogContent className="w-[min(92vw,1000px)] max-w-none sm:max-w-[1400px]">
+                      <DialogTrigger render={<Button variant="default" className="h-9 w-full text-xs cursor-pointer">Open Dialog</Button>} />
+                      <DialogContent className="w-[min(92vw,1000px)] max-w-none sm:max-w-350">
                         <DialogHeader>
                           <DialogTitle>{meta?.title}</DialogTitle>
-                          <DialogDescription>
-                            {description}
+                          <Separator orientation="horizontal" className="h-10 bg-black m-3" />
+                          <DialogDescription className="grid grid-cols-1 gap-4 sm:grid-cols-1 lg:grid-cols-2 xl:grid-cols-2">
+                            <img
+                              src={imageUrl}
+                              alt={meta?.title ?? "NASA image"}
+                              className="h-72.5 w-full object-cover brightness-100 dark:brightness-90"
+                            />
+                            <div className="flex flex-col gap-2">
+                              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                                {description ? (
+                                <>
+                                  <strong>Description: </strong> {description}
+                                </>
+                              ) : (
+                                "Description"
+                              )}
+                              </p>
+                              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                                {meta?.photographer || meta?.secondary_creator ? (
+                                  <>
+                                    <strong>Photographer: </strong> {meta?.photographer || meta?.secondary_creator}
+                                  </>
+                                ) : "Unknown Photographer / Creator"}
+                              </p>
+                              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                                {meta?.date_created ? (
+                                  <>
+                                    <strong>Date Created: </strong> {new Date(meta?.date_created).toLocaleDateString()}
+                                  </>
+                                ) : null}
+                              </p>
+                              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                                {meta?.nasa_id ? (
+                                  <>
+                                    <strong>NASA ID: </strong> {meta?.nasa_id}
+                                  </>
+                                ) : null}
+                              </p>
+                              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                                {meta?.center ? (
+                                  <>
+                                    <strong>Center: </strong> {meta?.center}
+                                  </>
+                                ) : null}
+                              </p>
+                            </div>
                           </DialogDescription>
                         </DialogHeader>
-                        <DialogFooter>
-                          <Button type="button">COPY DATA (JSON)</Button>
-                          <Button type="button">DOWNLOAD IMAGE</Button>
+                        <Separator orientation="horizontal" className="h-10 bg-black m-3" />
+                        <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end xl:flex-row xl:justify-center">
+                          <Button type="button" onClick={() => downloadFile(jsonUrl, `${meta?.nasa_id || "image"}.json`)}>DOWNLOAD DATA (JSON)
+                            </Button>
+                          <Button type="button" onClick={() => downloadImage(meta, imageUrl)}>DOWNLOAD IMAGE</Button>
                           <DialogClose render={<Button variant="outline">CLOSE</Button>} />
                         </DialogFooter>
                       </DialogContent>
