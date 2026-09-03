@@ -24,7 +24,12 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator";
-
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@/components/ui/alert"
+import { AlertCircleIcon } from "lucide-react";
 
 type NasaImageItem = {
   href?: string;
@@ -44,13 +49,21 @@ type NasaMetadata = {
 
 const downloadImage = async (meta: NasaMetadata | undefined, imageUrl: string | undefined) => {
   if (!meta || !imageUrl) {
-    alert("Image data not available");
+    <Alert variant="destructive" className="max-w-md">
+      <AlertCircleIcon />
+      <AlertTitle>Failed to download image!</AlertTitle>
+      <AlertDescription>Problem occured downloading image, metadata or URL is missing.</AlertDescription>
+    </Alert>
     return;
   }
   try {
     const response = await fetch(imageUrl);
     if (!response.ok) {
-      alert("Failed to download image");
+    <Alert variant="destructive" className="max-w-md">
+      <AlertCircleIcon />
+      <AlertTitle>Failed to download image!</AlertTitle>
+      <AlertDescription>Problem occured downloading image, metadata or URL is missing.</AlertDescription>
+    </Alert>
       return;
     }
     const blob = await response.blob();
@@ -65,7 +78,11 @@ const downloadImage = async (meta: NasaMetadata | undefined, imageUrl: string | 
     window.URL.revokeObjectURL(url);
   } catch (error) {
     console.error("Download error:", error);
-    alert("Failed to download image file");
+    <Alert variant="destructive" className="max-w-md">
+      <AlertCircleIcon />
+      <AlertTitle>Failed to download image!</AlertTitle>
+      <AlertDescription>Problem occured downloading image, metadata or URL is missing.</AlertDescription>
+    </Alert>
   }
 };
 
@@ -188,7 +205,6 @@ export const ElcovekPage = () => {
             </Button>
           </div>
         </div>
-
         <form
           className="mb-4 flex gap-2"
           onSubmit={(e) => {
