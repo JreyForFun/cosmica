@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { useNavigate,  } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -48,41 +48,62 @@ export const PaliaAndromi = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cards, setCards] = useState<ApodData[]>([]);
+  const initialRange = useMemo(() => getRange(PAGE_SIZE - 1), []);
+  const [range, setRange] = useState(initialRange);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchInitialCards = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+  const fetchCardsByRange = useCallback(async (startDate: string, endDate: string) => {
+    try {
+      setLoading(true);
+      setError(null);
 
-        const range = getRange(PAGE_SIZE - 1);
-        const response = await fetch(
-          `/api/nasa/apod/range?startDate=${range.startDate}&endDate=${range.endDate}`
-        );
+      const response = await fetch(
+        `/api/nasa/apod/range?startDate=${startDate}&endDate=${endDate}`
+      );
 
-        const data = await response.json();
+      const data = await response.json();
 
-        if (!response.ok) {
-          throw new Error(data?.message || "Failed to fetch cards");
-        }
-
-        const apodData = Array.isArray(data?.apod) ? data.apod : [];
-        const newestFirst = [...apodData].sort(
-          (a, b) => new Date(b.date ?? 0).getTime() - new Date(a.date ?? 0).getTime()
-        );
-
-        setCards(newestFirst.slice(0, PAGE_SIZE));
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to fetch cards");
-        setCards([]);
-      } finally {
-        setLoading(false);
+      if (!response.ok) {
+        throw new Error(data?.message || "Failed to fetch cards");
       }
-    };
 
-    fetchInitialCards();
+      const apodData = Array.isArray(data?.apod) ? data.apod : [];
+      const newestFirst = [...apodData].sort(
+        (a, b) => new Date(b.date ?? 0).getTime() - new Date(a.date ?? 0).getTime()
+      );
+
+      setCards(newestFirst.slice(0, PAGE_SIZE));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch cards");
+      setCards([]);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void fetchCardsByRange(initialRange.startDate, initialRange.endDate);
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [fetchCardsByRange, initialRange]);
+
+  const handleRangeSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!range.startDate || !range.endDate) {
+      setError("Please select both start and end dates.");
+      return;
+    }
+
+    if (new Date(range.startDate) > new Date(range.endDate)) {
+      setError("Start date cannot be later than end date.");
+      return;
+    }
+
+    fetchCardsByRange(range.startDate, range.endDate);
+  };
 
   const handleLoadMore = async () => {
     try {
@@ -131,7 +152,7 @@ export const PaliaAndromi = () => {
           <div>
             <h1 className="mb-4 text-3xl font-bold">Palia Andromi</h1>
             <p className="mb-4 text-sm uppercase tracking-[0.2em] text-zinc-500">
-              Where past stars gather to show it's cosmica
+              Where past stars gather to show it's <strong className="text-orange-500">cosmica</strong>
             </p>
           </div>
           <div>
@@ -142,6 +163,39 @@ export const PaliaAndromi = () => {
           </div>
           </div>
         </div>
+        <form
+          onSubmit={handleRangeSubmit}
+          className="mb-6 flex flex-col gap-3 rounded-xl border border-zinc-200 bg-zinc-50 p-4 md:flex-row md:items-end"
+        >
+          <label className="flex flex-1 flex-col gap-1 text-sm font-medium text-zinc-700">
+            Start date
+            <input
+              type="date"
+              value={range.startDate}
+              onChange={(event) =>
+                setRange((prev) => ({ ...prev, startDate: event.target.value }))
+              }
+              className="rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400"
+            />
+          </label>
+
+          <label className="flex flex-1 flex-col gap-1 text-sm font-medium text-zinc-700">
+            End date
+            <input
+              type="date"
+              value={range.endDate}
+              onChange={(event) =>
+                setRange((prev) => ({ ...prev, endDate: event.target.value }))
+              }
+              className="rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400"
+            />
+          </label>
+
+          <Button type="submit" className="h-10 md:min-w-35">
+            Search range
+          </Button>
+        </form>
+
         {loading && cards.length === 0 && (
           <p className="text-sm text-zinc-500">Loading Palia Andromi Cards...</p>
         )}
@@ -154,14 +208,14 @@ export const PaliaAndromi = () => {
           {cards.map((card, index) => (
             <Card
               key={`${card.date ?? index}`}
-              className="mx-auto flex w-full max-w-[260px] flex-col overflow-hidden rounded-t-xl border-0 bg-white pt-0 shadow-sm dark:bg-zinc-950"
+              className="mx-auto flex w-full max-w-65 flex-col overflow-hidden rounded-t-xl border-0 bg-white pt-0 shadow-sm dark:bg-zinc-950"
             >
               <img
                 src={card.url || "https://avatar.vercel.sh/shadcn1"}
                 alt={card.title || "APOD image"}
-                className="h-[190px] w-full object-cover brightness-100 dark:brightness-90"
+                className="h-47.5 w-full object-cover brightness-100 dark:brightness-90"
               />
-              <CardHeader className="flex min-h-[80px] flex-col gap-2 p-3">
+              <CardHeader className="flex min-h-20 flex-col gap-2 p-3">
                 <CardAction>
                   <Badge variant="secondary" className="text-[10px]">
                     {card.date || "Featured"}

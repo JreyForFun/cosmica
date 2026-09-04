@@ -2,13 +2,19 @@ import { useState, type ReactNode } from "react";
 import axios from "axios";
 import { AuthContext } from "./auth-context";
 
+type FavoriteMap = {
+  apod?: string[];
+  elcovek?: string[];
+  vibteo?: string[];
+};
+
 type User = {
   _id?: string;
   id?: string;
   username?: string;
   email?: string;
   token?: string;
-  favorites?: string[];
+  favorites?: FavoriteMap;
   photoUrl?: string;
 };
 

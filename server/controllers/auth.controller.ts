@@ -64,8 +64,12 @@ export async function toggleFavoriteHandler(req: Request, res: Response, next: N
             throw new AppError(401, 'Authentication is required');
         }
 
-        const { favorite } = req.body ?? {};
-        const { favorites } = await toggleFavorite(req.user.userId, favorite);
+        const { favorite, category } = req.body ?? {};
+        const normalizedCategory = category === 'elcovek' || category === 'vibteo' || category === 'apod'
+          ? category
+          : 'apod';
+
+        const { favorites } = await toggleFavorite(req.user.userId, favorite, normalizedCategory);
 
         res.status(200).json({
             success: true,

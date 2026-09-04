@@ -1,9 +1,8 @@
 import User from '../models/user.model';
-import { UserTypes, DBUserRow, DBUserWithPasswordRow } from '../types/user.types';
+import { UserTypes, DBUserRow, DBUserWithPasswordRow, FavoriteMap } from '../types/user.types';
 
 export async function findUserByEmail(email: string): Promise<UserTypes | null> {
-  // Implementation for finding user by email
-  const result = await User.findOne({email})
+  const result = await User.findOne({ email })
     .select("_id email username favorites createdAt")
     .lean<UserTypes>();
   return result ?? null;
@@ -34,7 +33,7 @@ export async function createUser(
 
 export async function updateUserFavorites(
   userId: string,
-  favorites: string[],
+  favorites: FavoriteMap,
 ): Promise<UserTypes | null> {
   const result = await User.findByIdAndUpdate(
     userId,
@@ -48,7 +47,6 @@ export async function updateUserFavorites(
 }
 
 export async function findUserByEmailWithPassword(email: string): Promise<DBUserWithPasswordRow | null> {
-  // Implementation for finding user by email with password
     const result = await User.findOne({email})
       .select("_id email username password photoUrl favorites createdAt")
       .lean<DBUserWithPasswordRow>();

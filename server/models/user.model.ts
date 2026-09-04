@@ -1,6 +1,14 @@
 import mongoose from "mongoose";
 import bcrypt from 'bcrypt';
 
+const favoritesSchema = new mongoose.Schema(
+  {
+    apod: { type: [String], default: [] },
+    elcovek: { type: [String], default: [] },
+    vibteo: { type: [String], default: [] },
+  },
+  { _id: false }
+);
 
 const userSchema = new mongoose.Schema({
     username: {
@@ -17,9 +25,10 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    favorites: [{
-        type: String,
-    }],
+    favorites: {
+        type: favoritesSchema,
+        default: () => ({ apod: [], elcovek: [], vibteo: [] }),
+    },
     photoUrl: {
         type: String
     }

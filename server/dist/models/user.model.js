@@ -5,6 +5,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importDefault(require("mongoose"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
+const favoritesSchema = new mongoose_1.default.Schema({
+    apod: { type: [String], default: [] },
+    elcovek: { type: [String], default: [] },
+    vibteo: { type: [String], default: [] },
+}, { _id: false });
 const userSchema = new mongoose_1.default.Schema({
     username: {
         type: String,
@@ -20,9 +25,10 @@ const userSchema = new mongoose_1.default.Schema({
         type: String,
         required: true
     },
-    favorites: [{
-            type: String,
-        }],
+    favorites: {
+        type: favoritesSchema,
+        default: () => ({ apod: [], elcovek: [], vibteo: [] }),
+    },
     photoUrl: {
         type: String
     }

@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
 import { AppError } from '../lib/errors';
 import { signAccessToken } from '../lib/jwt';
-import { UserTypes } from '../types/user.types';
+import { FavoriteCategory, FavoriteMap, UserTypes } from '../types/user.types';
 import {
   findUserByEmail,
   createUser,
@@ -9,6 +9,12 @@ import {
   findUserById,
   updateUserFavorites,
 } from '../repositories/user.repository';
+
+const emptyFavorites = (): FavoriteMap => ({
+  apod: [],
+  elcovek: [],
+  vibteo: [],
+});
 
 export async function registerUser(username: string, email: string, password: string): Promise<UserTypes> {
   if(!email || !username || !password) {
@@ -49,6 +55,13 @@ export async function loginUser(email: string, password: string): Promise<{ acce
   }
 
   const accessToken = signAccessToken({userId: user._id, email: user.email});
+  const favorites = user.favorites && typeof user.favorites === 'object'
+    ? {
+        apod: Array.isArray((user.favorites as any).apod) ? (user.favorites as any).apod : [],
+        elcovek: Array.isArray((user.favorites as any).elcovek) ? (user.favorites as any).elcovek : [],
+        vibteo: Array.isArray((user.favorites as any).vibteo) ? (user.favorites as any).vibteo : [],
+      }
+    : emptyFavorites();
 
   return {
     accessToken,
@@ -56,13 +69,17 @@ export async function loginUser(email: string, password: string): Promise<{ acce
       _id: user._id,
       email: user.email,
       username: user.username,
-      favorites: user.favorites ?? [],
+      favorites,
       createdAt: user.createdAt,
     },
   };
 }
 
-export async function toggleFavorite(userId: string, favorite: string): Promise<{ favorites: string[] }> {
+export async function toggleFavorite(
+  userId: string,
+  favorite: string,
+  category: FavoriteCategory = 'apod',
+): Promise<{ favorites: FavoriteMap }> {
   const normalizedFavorite = favorite?.trim();
 
   if (!normalizedFavorite) {
@@ -74,10 +91,26 @@ export async function toggleFavorite(userId: string, favorite: string): Promise<
     throw new AppError(404, 'User not found');
   }
 
-  const currentFavorites = user.favorites ?? [];
-  const nextFavorites = currentFavorites.includes(normalizedFavorite)
-    ? currentFavorites.filter((item) => item !== normalizedFavorite)
-    : [...currentFavorites, normalizedFavorite];
+  const currentFavorites = user.favorites && typeof user.favorites === 'object'
+    ? {
+        apod: Array.isArray((user.favorites as any).apod) ? (user.favorites as any).apod : [],
+        elcovek: Array.isArray((user.favorites as any).elcovek) ? (user.favorites as any).elcovek : [],
+        vibteo: Array.isArray((user.favorites as any).vibteo) ? (user.favorites as any).vibteo : [],
+      }
+    : emptyFavorites();
+
+  const selectedFavorites = currentFavorites[category] ?? [];
+  const nextCategoryFavorites = selectedFavorites.includes(normalizedFavorite)
+    ? selectedFavorites.filter((item: string) => item !== normalizedFavorite)
+    : [...selectedFavorites, normalizedFavorite];
+
+  const nextFavorites: FavoriteMap = {
+    apod: [...(currentFavorites.apod ?? [])],
+    elcovek: [...(currentFavorites.elcovek ?? [])],
+    vibteo: [...(currentFavorites.vibteo ?? [])],
+  };
+
+  nextFavorites[category] = nextCategoryFavorites;
 
   const updatedUser = await updateUserFavorites(userId, nextFavorites);
 
