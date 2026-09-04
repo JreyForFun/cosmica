@@ -289,7 +289,7 @@ export const ElcovekPage = () => {
                         : "Add to favorites"}
                   </Button>
                   <Dialog>
-                      <DialogTrigger render={<Button variant="default" className="h-9 w-full text-xs cursor-pointer">Open Dialog</Button>} />
+                      <DialogTrigger render={<Button variant="default" className="h-9 w-full text-xs cursor-pointer">FULL DETAILS</Button>} />
                       <DialogContent className="w-[min(92vw,1000px)] max-w-none sm:max-w-350">
                         <DialogHeader>
                           <DialogTitle>{meta?.title}</DialogTitle>

@@ -10,6 +10,11 @@ const bcrypt_1 = __importDefault(require("bcrypt"));
 const errors_1 = require("../lib/errors");
 const jwt_1 = require("../lib/jwt");
 const user_repository_1 = require("../repositories/user.repository");
+const emptyFavorites = () => ({
+    apod: [],
+    elcovek: [],
+    vibteo: [],
+});
 async function registerUser(username, email, password) {
     if (!email || !username || !password) {
         throw new errors_1.AppError(400, "Email, username and password are required");
@@ -42,18 +47,25 @@ async function loginUser(email, password) {
         throw new errors_1.AppError(401, "Invalid email or password");
     }
     const accessToken = (0, jwt_1.signAccessToken)({ userId: user._id, email: user.email });
+    const favorites = user.favorites && typeof user.favorites === 'object'
+        ? {
+            apod: Array.isArray(user.favorites.apod) ? user.favorites.apod : [],
+            elcovek: Array.isArray(user.favorites.elcovek) ? user.favorites.elcovek : [],
+            vibteo: Array.isArray(user.favorites.vibteo) ? user.favorites.vibteo : [],
+        }
+        : emptyFavorites();
     return {
         accessToken,
         user: {
             _id: user._id,
             email: user.email,
             username: user.username,
-            favorites: user.favorites ?? [],
+            favorites,
             createdAt: user.createdAt,
         },
     };
 }
-async function toggleFavorite(userId, favorite) {
+async function toggleFavorite(userId, favorite, category = 'apod') {
     const normalizedFavorite = favorite?.trim();
     if (!normalizedFavorite) {
         throw new errors_1.AppError(400, 'Favorite value is required');
@@ -62,10 +74,23 @@ async function toggleFavorite(userId, favorite) {
     if (!user) {
         throw new errors_1.AppError(404, 'User not found');
     }
-    const currentFavorites = user.favorites ?? [];
-    const nextFavorites = currentFavorites.includes(normalizedFavorite)
-        ? currentFavorites.filter((item) => item !== normalizedFavorite)
-        : [...currentFavorites, normalizedFavorite];
+    const currentFavorites = user.favorites && typeof user.favorites === 'object'
+        ? {
+            apod: Array.isArray(user.favorites.apod) ? user.favorites.apod : [],
+            elcovek: Array.isArray(user.favorites.elcovek) ? user.favorites.elcovek : [],
+            vibteo: Array.isArray(user.favorites.vibteo) ? user.favorites.vibteo : [],
+        }
+        : emptyFavorites();
+    const selectedFavorites = currentFavorites[category] ?? [];
+    const nextCategoryFavorites = selectedFavorites.includes(normalizedFavorite)
+        ? selectedFavorites.filter((item) => item !== normalizedFavorite)
+        : [...selectedFavorites, normalizedFavorite];
+    const nextFavorites = {
+        apod: [...(currentFavorites.apod ?? [])],
+        elcovek: [...(currentFavorites.elcovek ?? [])],
+        vibteo: [...(currentFavorites.vibteo ?? [])],
+    };
+    nextFavorites[category] = nextCategoryFavorites;
     const updatedUser = await (0, user_repository_1.updateUserFavorites)(userId, nextFavorites);
     return {
         favorites: updatedUser?.favorites ?? nextFavorites,

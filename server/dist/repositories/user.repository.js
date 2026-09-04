@@ -10,7 +10,6 @@ exports.updateUserFavorites = updateUserFavorites;
 exports.findUserByEmailWithPassword = findUserByEmailWithPassword;
 const user_model_1 = __importDefault(require("../models/user.model"));
 async function findUserByEmail(email) {
-    // Implementation for finding user by email
     const result = await user_model_1.default.findOne({ email })
         .select("_id email username favorites createdAt")
         .lean();
@@ -36,7 +35,6 @@ async function updateUserFavorites(userId, favorites) {
     return result ?? null;
 }
 async function findUserByEmailWithPassword(email) {
-    // Implementation for finding user by email with password
     const result = await user_model_1.default.findOne({ email })
         .select("_id email username password photoUrl favorites createdAt")
         .lean();
