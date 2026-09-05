@@ -24,12 +24,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator";
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from "@/components/ui/alert"
-import { AlertCircleIcon } from "lucide-react";
 
 type NasaImageItem = {
   href?: string;
@@ -49,22 +43,12 @@ type NasaMetadata = {
 
 const downloadImage = async (meta: NasaMetadata | undefined, imageUrl: string | undefined) => {
   if (!meta || !imageUrl) {
-    <Alert variant="destructive" className="max-w-md">
-      <AlertCircleIcon />
-      <AlertTitle>Failed to download image!</AlertTitle>
-      <AlertDescription>Problem occured downloading image, metadata or URL is missing.</AlertDescription>
-    </Alert>
-    return;
+    throw new Error("Image metadata or URL is missing.");
   }
   try {
     const response = await fetch(imageUrl);
     if (!response.ok) {
-    <Alert variant="destructive" className="max-w-md">
-      <AlertCircleIcon />
-      <AlertTitle>Failed to download image!</AlertTitle>
-      <AlertDescription>Problem occured downloading image, metadata or URL is missing.</AlertDescription>
-    </Alert>
-      return;
+      throw new Error(`The image could not be downloaded (${response.status}).`);
     }
     const blob = await response.blob();
     const url = window.URL.createObjectURL(blob);
@@ -78,11 +62,7 @@ const downloadImage = async (meta: NasaMetadata | undefined, imageUrl: string | 
     window.URL.revokeObjectURL(url);
   } catch (error) {
     console.error("Download error:", error);
-    <Alert variant="destructive" className="max-w-md">
-      <AlertCircleIcon />
-      <AlertTitle>Failed to download image!</AlertTitle>
-      <AlertDescription>Problem occured downloading image, metadata or URL is missing.</AlertDescription>
-    </Alert>
+    throw error instanceof Error ? error : new Error("Could not download the image.");
   }
 };
 
@@ -123,6 +103,7 @@ export const ElcovekPage = () => {
   const [inputValue, setInputValue] = useState("space");
   const [searchTerm, setSearchTerm] = useState("space");
   const [savingFavorite, setSavingFavorite] = useState<Record<string, boolean>>({});
+  const [actionError, setActionError] = useState<string | null>(null);
   const auth = useContext(AuthContext);
 
   const navigate = useNavigate();
@@ -139,6 +120,7 @@ export const ElcovekPage = () => {
     if (!auth?.user || !favoriteKey) return;
 
     setSavingFavorite((prev) => ({ ...prev, [favoriteKey]: true }));
+    setActionError(null);
 
     try {
       await axios.patch("/api/auth/favorites", {
@@ -146,8 +128,20 @@ export const ElcovekPage = () => {
         category: "elcovek",
       });
       await auth.refreshUser();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Could not update favorites.");
     } finally {
       setSavingFavorite((prev) => ({ ...prev, [favoriteKey]: false }));
+    }
+  };
+
+  const handleDownloadImage = async (meta: NasaMetadata | undefined, imageUrl: string | undefined) => {
+    setActionError(null);
+
+    try {
+      await downloadImage(meta, imageUrl);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Could not download the image.");
     }
   };
 
@@ -177,7 +171,6 @@ export const ElcovekPage = () => {
         }
 
         const data = await response.json();
-        console.log("Fetched data:", data); // Debugging line
         setCards(data.images?.items ?? []);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Something went wrong");
@@ -190,42 +183,37 @@ export const ElcovekPage = () => {
   }, [searchTerm]);
 
   return (
-    <div className="max-w-7xl p-4">
+    <div className="mx-auto max-w-7xl p-4">
       <div className="rounded-xl border bg-white p-6 shadow-sm dark:bg-zinc-900">
-        <div className="flex flex-row items-center justify-between gap-4 mb-4">
+        <div className="mb-6 flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
           <div>
             <h1 className="mb-4 text-3xl font-bold">ELCOVEK KOUSMO</h1>
             <p className="mb-4 text-sm uppercase tracking-[0.2em] text-zinc-500">
               Where every snap preserved its beauty
             </p>
           </div>
-          <div>
-            <Button variant="default" className="cursor-pointer" onClick={() => navigate("/vibteo")}>
+          <div className="flex w-full md:w-auto">
+            <Button variant="default" className="w-full cursor-pointer md:w-auto" onClick={() => navigate("/vibteo")}>
               VIEW THRU PRESERVED TAPES
             </Button>
           </div>
         </div>
         <form
-          className="mb-4 flex gap-2"
+          className="mb-6 flex flex-col gap-2 sm:flex-row"
           onSubmit={(e) => {
             e.preventDefault();
             handleSearch();
           }}
         >
-          <div className="relative w-50">
+          <div className="relative flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-500" />
             <input
               type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  handleSearch();
-                }
-              }}
-              className="w-full border border-zinc-200 bg-white pl-9 pr-3 py-2 text-sm outline-none ring-0 placeholder:text-zinc-400 focus:border-zinc-400"
+              className="w-full border border-zinc-200 bg-white py-2 pl-9 pr-3 text-sm outline-none placeholder:text-zinc-400 focus:border-zinc-400"
               placeholder="Search NASA images"
+              aria-label="Search NASA images"
             />
           </div>
           <Button type="submit" variant="default" className="shrink-0 cursor-pointer">
@@ -233,37 +221,41 @@ export const ElcovekPage = () => {
           </Button>
         </form>
 
-        {loading && <p>Loading images...</p>}
-        {error && <p className="text-red-500">{error}</p>}
+        {loading && <p className="mb-4 text-sm text-zinc-500">Loading images...</p>}
+        {error && <p className="mb-4 text-sm text-red-500">{error}</p>}
+        {actionError && <p className="mb-4 text-sm text-red-500">{actionError}</p>}
+        {!loading && !error && cards.length === 0 && (
+          <p className="text-sm text-zinc-500">No NASA images matched &quot;{searchTerm}&quot;.</p>
+        )}
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-1 lg:grid-cols-1 xl:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {cards.map((card, index) => {
             const meta = card.data?.[0];
             const jsonUrl = card.href
             const imageUrl = card.links?.[0]?.href;
+            const favoriteKey = meta?.nasa_id ?? meta?.title ?? `image-${index}`;
             const description = meta?.description;
             const trimmedDescription = description?.slice(0, 210) ?? "Description";
 
             return (
               <Card
                 key={`${meta?.title ?? "image"}-${index}`}
-                className="mx-auto flex w-full max-h-150 max-w-175 flex-col overflow-hidden border-0 bg-white pt-0 shadow-sm dark:bg-zinc-950"
+                className="mx-auto flex w-full max-w-175 flex-col overflow-hidden rounded-xl border bg-white pt-0 shadow-sm dark:bg-zinc-950"
               >
                 {imageUrl ? (
                   <img
                     src={imageUrl}
                     alt={meta?.title ?? "NASA image"}
-                    className="h-72.5 w-full object-cover brightness-100 dark:brightness-90"
+                    className="aspect-video w-full object-cover brightness-100 dark:brightness-90"
                   />
                 ) : null}
 
                 <CardHeader className="flex min-h-20 flex-col gap-2 p-3">
-                  <CardAction>
+                  <CardAction className="flex flex-wrap gap-2">
                     <Badge variant="secondary" className="text-[10px] mr-2">
                       {meta?.photographer || meta?.secondary_creator ? meta.photographer || meta.secondary_creator : "Image"}
                     </Badge>
-                    <br />
-                    <Badge variant="default" className="text-[10px]">
+                    <Badge variant="outline" className="text-[10px]">
                       {meta?.date_created ? new Date(meta?.date_created).toLocaleDateString() : "Image"}
                     </Badge>
                   </CardAction>
@@ -271,7 +263,7 @@ export const ElcovekPage = () => {
                     {meta?.title ?? "Astronomy Picture"}
                   </CardTitle>
                   <CardDescription className="text-xs text-zinc-500 dark:text-zinc-400">
-                    {trimmedDescription ?? "Description"}{description?.length === 210 ? "......." : ""}
+                    {trimmedDescription}{description && description.length > 210 ? "..." : ""}
                   </CardDescription>
                 </CardHeader>
 
@@ -279,12 +271,13 @@ export const ElcovekPage = () => {
                   <Button
                     type="button"
                     className="h-9 w-full text-xs cursor-pointer"
-                    onClick={() => handleToggleFavorite(meta?.title ?? String(index))}
-                    disabled={savingFavorite[meta?.title ?? String(index)] || !auth?.user}
+                    variant={isFavorite(favoriteKey) ? "secondary" : "default"}
+                    onClick={() => handleToggleFavorite(favoriteKey)}
+                    disabled={savingFavorite[favoriteKey] || !auth?.user}
                   >
-                    {savingFavorite[meta?.title ?? String(index)]
+                    {savingFavorite[favoriteKey]
                       ? "Saving..."
-                      : isFavorite(meta?.title ?? String(index))
+                      : isFavorite(favoriteKey)
                         ? "Remove favorite"
                         : "Add to favorites"}
                   </Button>
@@ -298,7 +291,7 @@ export const ElcovekPage = () => {
                             <img
                               src={imageUrl}
                               alt={meta?.title ?? "NASA image"}
-                              className="h-72.5 w-full object-cover brightness-100 dark:brightness-90"
+                              className="aspect-video w-full object-cover brightness-100 dark:brightness-90"
                             />
                             <div className="flex flex-col gap-2">
                               <p className="text-sm text-zinc-500 dark:text-zinc-400">
@@ -345,7 +338,7 @@ export const ElcovekPage = () => {
                         <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end xl:flex-row xl:justify-center">
                           <Button type="button" onClick={() => downloadFile(jsonUrl, `${meta?.nasa_id || "image"}.json`)}>DOWNLOAD DATA (JSON)
                             </Button>
-                          <Button type="button" onClick={() => downloadImage(meta, imageUrl)}>DOWNLOAD IMAGE</Button>
+                          <Button type="button" onClick={() => handleDownloadImage(meta, imageUrl)}>DOWNLOAD IMAGE</Button>
                           <DialogClose render={<Button variant="outline">CLOSE</Button>} />
                         </DialogFooter>
                       </DialogContent>
