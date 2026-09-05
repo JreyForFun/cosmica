@@ -9,10 +9,12 @@ export async function getNasaVideos(req: Request, res: Response, next: NextFunct
     const pageSize = typeof req.query.pageSize === "string" ? parseInt(req.query.pageSize, 10) : 10;
 
     if (!query) throw new AppError(400, "query is required");
+    const videos = await fetchNasaVideos(query, page, pageSize);
+    if (!videos) throw new AppError(500, "Failed to fetch videos");
 
     res.status(200).json({
       success: true,
-      videos: await fetchNasaVideos(query, page, pageSize),
+      videos: videos,
     });
   } catch (error) {
     next(error);
