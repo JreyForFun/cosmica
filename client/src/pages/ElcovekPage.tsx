@@ -1,5 +1,6 @@
-import { useContext, useEffect, useState } from "react";
+import { useCallback,useContext, useEffect, useState } from "react";
 import { Search } from "lucide-react";
+import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { AuthContext } from "@/context/auth-context";
@@ -97,6 +98,13 @@ const downloadFile = async (fileUrl: string | undefined, filename: string) => {
 };
 
 export const ElcovekPage = () => {
+  const PAGE_SIZE = 10;
+
+  const [page, setPage] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cards, setCards] = useState<NasaImageItem[]>([]);
@@ -152,35 +160,18 @@ export const ElcovekPage = () => {
     setSearchTerm(nextValue);
   };
 
-  useEffect(() => {
-    const fetchInitialCards = async () => {
-      try {
+  const fetchPage = useCallback(
+    async (pageNumber: number, replaceCards: boolean) => {
+      if(replaceCards){
         setLoading(true);
         setError(null);
-
-        const params = new URLSearchParams({
-          query: searchTerm,
-          page: "1",
-          pageSize: "10",
-        });
-
-        const response = await fetch(`/api/nasa/ivl/images?${params.toString()}`);
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch images (${response.status})`);
-        }
-
-        const data = await response.json();
-        setCards(data.images?.items ?? []);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Something went wrong");
-      } finally {
-        setLoading(false);
+      } else {
+        setLoadingMore(true);
+        setLoadMoreError(null);
       }
-    };
-
-    fetchInitialCards();
-  }, [searchTerm]);
+    },
+    [searchTerm]
+  );
 
   return (
     <div className="mx-auto max-w-7xl p-4">
