@@ -169,6 +169,50 @@ export const ElcovekPage = () => {
         setLoadingMore(true);
         setLoadMoreError(null);
       }
+
+      try {
+        const params = new URLSearchParams({
+          q: searchTerm,
+          page: String(pageNumber),
+          page_size: String(PAGE_SIZE)
+        });
+
+        const response = await axios.get(
+          `/api/nasa/images?${params.toString()}`
+        );
+
+        if(!response.data.success){
+          throw new Error("Failed to fetch images.");
+        }
+
+        const data = response.data;
+        const result = data.images;
+        const nextItems = result?.items ?? [];
+
+        setCards((previousCards) => {
+        if (replaceCards) {
+          return nextItems;
+        }
+
+        return [...previousCards, ...nextItems];
+      });
+
+      setPage(pageNumber);
+      setHasMore(Boolean(result?.hasMore));
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Could not fetch images.";
+        if (replaceCards) {
+          setError(message);
+        } else {
+          setLoadMoreError(message);
+        }
+      } finally {
+        if(replaceCards){
+          setLoading(false);
+        } else {
+          setLoadingMore(false);
+        }
+      }
     },
     [searchTerm]
   );
