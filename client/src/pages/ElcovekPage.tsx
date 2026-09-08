@@ -163,6 +163,10 @@ export const ElcovekPage = () => {
   const fetchPage = useCallback(
     async (pageNumber: number, replaceCards: boolean) => {
       if(replaceCards){
+        setCards([]);
+        setPage(0);
+        setHasMore(true);
+        setLoadMoreError(null);
         setLoading(true);
         setError(null);
       } else {
@@ -172,13 +176,13 @@ export const ElcovekPage = () => {
 
       try {
         const params = new URLSearchParams({
-          q: searchTerm,
+          query: searchTerm,
           page: String(pageNumber),
-          page_size: String(PAGE_SIZE)
+          pageSize: String(PAGE_SIZE),
         });
 
         const response = await axios.get(
-          `/api/nasa/images?${params.toString()}`
+          `/api/nasa/ivl/images?${params.toString()}`
         );
 
         if(!response.data.success){
@@ -216,6 +220,28 @@ export const ElcovekPage = () => {
     },
     [searchTerm]
   );
+
+  const handleLoadMore = useCallback(() => {
+    if (loading || loadingMore || !hasMore) {
+      return;
+    }
+
+    void fetchPage(page + 1, false);
+  }, [fetchPage, hasMore, loading, loadingMore, page]);
+
+  const sentinelRef = useInfiniteScroll({
+    loading: loading || loadingMore,
+    hasMore,
+    onLoadMore: handleLoadMore,
+  });
+
+  useEffect(() => {
+    const requestId = window.setTimeout(() => {
+      void fetchPage(1, true);
+    }, 0);
+
+    return () => window.clearTimeout(requestId);
+  }, [searchTerm, fetchPage]);
 
   return (
     <div className="mx-auto max-w-7xl p-4">
@@ -383,6 +409,29 @@ export const ElcovekPage = () => {
             );
           })}
         </div>
+
+        <div ref={sentinelRef} className="h-10" aria-hidden="true" />
+
+        {loadingMore && (
+          <p className="mt-6 text-center text-sm text-zinc-500">
+            Loading more images...
+          </p>
+        )}
+
+        {loadMoreError && (
+          <div className="mt-6 text-center">
+            <p className="text-sm text-red-500">{loadMoreError}</p>
+            <Button type="button" variant="outline" onClick={handleLoadMore} className="mt-2">
+              Try again
+            </Button>
+          </div>
+        )}
+
+        {!hasMore && cards.length > 0 && (
+          <p className="mt-6 text-center text-sm text-zinc-500">
+            You reached the end of the image collection.
+          </p>
+        )}
       </div>
     </div>
   );
