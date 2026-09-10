@@ -1,5 +1,6 @@
-import { useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import axios from "axios";
+import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "@/context/auth-context";
 import { Badge } from "@/components/ui/badge";
@@ -56,6 +57,12 @@ const downloadVideo = async (videoUrl: string | undefined, filename: string) => 
 };
 
 export const VibteoPage = () => {
+  const PAGE_SIZE = 10;
+
+  const [page, setPage] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("space");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -114,39 +121,93 @@ export const VibteoPage = () => {
     setSearchTerm(nextValue);
   };
 
-  useEffect(() => {
-    const fetchVibteoItems = async () => {
-      try {
+  const fetchPage = useCallback(
+    async (pageNumber: number, replaceCards: boolean) => {
+      if(replaceCards) {
+        setCards([]);
+        setPage(0);
+        setHasMore(true);
+        setLoadMoreError(null);
         setLoading(true);
         setError(null);
+      } else {
+        setLoadingMore(true);
+        setLoadMoreError(null);
+      }
 
+      try {
         const params = new URLSearchParams({
           query: searchTerm,
-          page: "1",
-          pageSize: "10",
+          page: String(pageNumber),
+          pageSize: String(PAGE_SIZE),
         });
 
-        const response = await fetch(`/api/nasa/ivl/videos?${params.toString()}`);
+        const response = await axios.get(
+          `/api/nasa/ivl/videos?${params.toString()}`,
+        );
 
-        if (!response.ok) {
-          throw new Error(`Failed to fetch images (${response.status})`);
+        if (!response.data.success) {
+          throw new Error(response.data.error || "Failed to fetch NASA videos.");
         }
 
-        const data = await response.json();
-        setCards(data.videos?.items ?? []);
+        const res = response.data.videos;
+        const nextItems = res?.items ?? [];
+
+        setCards((previousCards) => {
+          if(replaceCards) {
+            return nextItems;
+          }
+
+          return [...previousCards, ...nextItems];
+        });
+
+        setPage(pageNumber);
+        setHasMore(Boolean(res?.hasMore));
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Something went wrong");
+        const message = err instanceof Error
+          ? err.message
+          : "Something went wrong while fetching NASA videos.";
+
+        if (replaceCards) {
+          setError(message);
+        } else {
+          setLoadMoreError(message);
+        }
       } finally {
-        setLoading(false);
+        if(replaceCards){
+          setLoading(false);
+        } else {
+          setLoadingMore(false);
+        }
       }
-    };
-    fetchVibteoItems();
-  }, [searchTerm]);
+    },[searchTerm])
+
+    const handleLoadMore = useCallback(() => {
+      if (loading || loadingMore || !hasMore) {
+        return;
+      }
+
+      void fetchPage(page + 1, false);
+    }, [fetchPage, hasMore, loading, loadingMore, page]);
+
+    const sentinelRef = useInfiniteScroll({
+      loading: loading || loadingMore,
+      hasMore,
+      onLoadMore: handleLoadMore,
+    });
+
+    useEffect(() => {
+      const requestId = window.setTimeout(() => {
+        void fetchPage(1, true);
+      }, 0);
+
+      return () => window.clearTimeout(requestId);
+    }, [fetchPage]);
 
   return (
-    <div className="mx-auto max-w-7xl p-4">
+    <div className="mx-auto w-full max-w-7xl p-4">
       <div className="rounded-xl border bg-white p-6 shadow-sm dark:bg-zinc-900">
-        <div className="mb-6 flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
+        <div className="mb-6 flex flex-col items-start justify-between gap-4 md:flex-row md:items-center ">
           <div>
             <h1 className="mb-4 text-3xl font-bold">VIBTEO</h1>
             <p className="mb-4 text-sm uppercase tracking-[0.2em] text-zinc-500">
@@ -263,6 +324,40 @@ export const VibteoPage = () => {
             );
           })}
         </div>
+        <div
+              ref={sentinelRef}
+              className="h-10"
+              aria-hidden="true"
+            />
+
+            {loadingMore && (
+              <p className="mt-6 text-center text-sm text-zinc-500">
+                Loading more videos...
+              </p>
+            )}
+
+            {loadMoreError && (
+              <div className="mt-6 text-center">
+                <p className="text-sm text-red-500">
+                  {loadMoreError}
+                </p>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleLoadMore}
+                  className="mt-2"
+                >
+                  Try again
+                </Button>
+              </div>
+            )}
+
+            {!hasMore && cards.length > 0 && (
+              <p className="mt-6 text-center text-sm text-zinc-500">
+                You reached the end of the video collection.
+              </p>
+            )}
       </div>
     </div>
   );

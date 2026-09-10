@@ -10,6 +10,7 @@ import { PaliaAndromi } from './pages/PaliaAndromiPage'
 import { SignupPage } from './pages/SignupPage'
 import { SOTDPage } from './pages/SOTDPage'
 import { VibteoPage } from './pages/VibteoPage'
+import { GaleriPage } from './pages/GaleriPage'
 
 function ProtectedRoute() {
   const auth = useContext(AuthContext)
@@ -36,7 +37,10 @@ function App() {
           <Route path="/cosmica/:date" element={<CosmicaDetailPage />} />
           <Route path="/elcovek" element={<ElcovekPage />} />
           <Route path="/vibteo" element={<VibteoPage />} />
-          <Route path="/galeri" element={<h1>Settings</h1>} />
+          <Route path="/galeri" element={<GaleriPage />} />
+          <Route path="/u/profile" element={<div>Profile Page</div>} />
+          <Route path="/u/forum" element={<div>Forum Page</div>} />
+          <Route path="/u/chat" element={<div>About Page</div>} />
         </Route>
       </Route>
     </Routes>
