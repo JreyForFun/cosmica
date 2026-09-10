@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/dialog"
 import { Separator } from "../ui/separator"
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
-import { User, EllipsisVertical, LogOut, Astroid, Layers2, Film, View, BookMarked, Info} from "lucide-react"
+import { User, EllipsisVertical,BookOpenText, LogOut, Network, CircleUserRound, Astroid, Layers2, Film, View, BookMarked} from "lucide-react"
 import { NavLink } from "react-router-dom"
 import { useContext } from "react"
 import { AuthContext } from "@/context/auth-context"
@@ -40,9 +40,9 @@ const menuItems = [
 ]
 
 const communityItems = [
-  {title: "PROFILE", url: "/u/profile", icon: Info},
-  {title: "FORUM", url: "/u/forum", icon: Info},
-  {title: "ABOUT", url: "/u/chat", icon: Info},
+  {title: "PROFILE", url: "/u/profile", icon: CircleUserRound},
+  {title: "FORUM", url: "/u/forum", icon: Network},
+  {title: "ABOUT", url: "/u/chat", icon: BookOpenText},
 ]
 
 export function AppSidebar() {
