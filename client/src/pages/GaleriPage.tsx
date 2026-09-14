@@ -17,6 +17,29 @@ type ApodData = {
   date?: string;
 };
 
+type NasaImageItem = {
+  data?: Array<{
+    nasa_id?: string;
+    title?: string;
+    description?: string;
+    photographer?: string;
+    date_created?: string;
+    center?: string;
+  }>;
+  links?: Array<{ href?: string }>;
+};
+
+type NasaVideoItem = {
+  videoUrl?: string;
+  data?: Array<{
+    nasa_id?: string;
+    title?: string;
+    description?: string;
+    date_created?: string;
+    center?: string;
+  }>;
+};
+
 export const GaleriPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,49 +49,89 @@ export const GaleriPage = () => {
 
   const apodFavorites = user?.user?.favorites?.apod ?? [];
   const apodFavoritesKey = apodFavorites.join(",");
+  const imageFavoriteIds = user?.user?.favorites?.elcovek ?? [];
+  const imageFavoritesKey = imageFavoriteIds.join(",");
+  const videoFavoriteIds = user?.user?.favorites?.vibteo ?? [];
+  const videoFavoritesKey = videoFavoriteIds.join(",");
+
 
   const [cards, setCards] = useState<ApodData[]>([]);
+  const [imageCards, setImageCards] = useState<NasaImageItem[]>([]);
+  const [videoCards, setVideoCards] = useState<NasaVideoItem[]>([]);
 
   const favoriteApodCards = cards.filter((card) =>
     card.date ? apodFavorites.includes(card.date) : false,
   );
 
-  useEffect(() => {
-    const fetchApod = async () => {
-      const favoriteDates = apodFavoritesKey ? apodFavoritesKey.split(",") : [];
+  const favoriteImages = imageCards.filter((card) => {
+  const nasaId = card.data?.[0]?.nasa_id;
 
-      if (favoriteDates.length === 0) {
-        setCards([]);
-        setLoading(false);
-        return;
-      }
+  return nasaId ? imageFavoriteIds.includes(nasaId) : false;
+});
+
+  const favoriteVideos = videoCards.filter((card) => {
+    const nasaId = card.data?.[0]?.nasa_id;
+
+    return nasaId ? videoFavoriteIds.includes(nasaId) : false;
+  });
+
+  useEffect(() => {
+    const fetchFavorites = async () => {
+      const favoriteDates = apodFavoritesKey ? apodFavoritesKey.split(",") : [];
+      const favoriteImageIds = imageFavoritesKey ? imageFavoritesKey.split(",") : [];
+      const favoriteVideoIds = videoFavoritesKey ? videoFavoritesKey.split(",") : [];
+
+      setLoading(true);
+      setError(null);
 
       try {
-        setLoading(true);
-        setError(null);
+        const apodPromise: Promise<ApodData[]> = favoriteDates.length === 0
+          ? Promise.resolve([])
+          : Promise.all(
+              favoriteDates.map(async (date) => {
+                const response = await axios.get<{ apod?: ApodData }>("/api/nasa/apod", {
+                  params: { date },
+                });
+                return response.data.apod;
+              }),
+            ).then((responses) =>
+              responses.filter((card): card is ApodData => Boolean(card)),
+            );
 
-        const responses = await Promise.all(
-          favoriteDates.map((date) =>
-            axios.get<{ apod?: ApodData }>("/api/nasa/apod", {
-              params: { date },
-            }),
-          ),
-        );
+        const imagePromise: Promise<NasaImageItem[]> = favoriteImageIds.length === 0
+          ? Promise.resolve([])
+          : axios
+              .get<{ images?: { items?: NasaImageItem[] } }>("/api/nasa/ivl/images", {
+                params: { query: "space", page: 1, pageSize: 100 },
+              })
+              .then((response) => response.data.images?.items ?? []);
 
-        const apodData = responses
-          .map((response) => response.data.apod)
-          .filter((card): card is ApodData => Boolean(card));
+        const videoPromise: Promise<NasaVideoItem[]> = favoriteVideoIds.length === 0
+          ? Promise.resolve([])
+          : axios
+              .get<{ videos?: { items?: NasaVideoItem[] } }>("/api/nasa/ivl/videos", {
+                params: { query: "space", page: 1, pageSize: 100 },
+              })
+              .then((response) => response.data.videos?.items ?? []);
+
+        const [apodData, imageData, videoData] = await Promise.all([
+          apodPromise,
+          imagePromise,
+          videoPromise,
+        ]);
 
         setCards(apodData);
+        setImageCards(imageData);
+        setVideoCards(videoData);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Could not load APOD cards.");
+        setError(err instanceof Error ? err.message : "Could not load favorites.");
       } finally {
         setLoading(false);
       }
     };
 
-    void fetchApod();
-  }, [apodFavoritesKey]);
+    void fetchFavorites();
+  }, [apodFavoritesKey, imageFavoritesKey, videoFavoritesKey]);
 
   return (
     <div className="mx-auto w-full max-w-7xl p-4">
@@ -94,8 +157,9 @@ export const GaleriPage = () => {
           {/*palia space*/}
           <div className="flex flex-col gap-4 items-start">
             <Button
-              variant="ghost"
+              variant="default"
               className="text-amber-400 hover:text-amber-500 cursor-pointer"
+              onClick={() => navigate("/galeri/palia-andromi")}
             >
               Palia Andromi Galeria
               <ChevronRight />
@@ -108,9 +172,9 @@ export const GaleriPage = () => {
             {error && <p className="text-sm text-red-500">{error}</p>}
 
             {!loading && !error && (
-              <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4 mb-4">
                 {favoriteApodCards.slice(0, 5).map((card) => (
-              <Card key={card.date} className="mx-auto flex w-full max-w-175 flex-col overflow-hidden rounded-xl border bg-white pt-0 shadow-sm dark:bg-zinc-950">
+              <Card key={card.date} className="mx-auto flex h-full w-full max-w-175 flex-col overflow-hidden border bg-white pt-0 shadow-sm dark:bg-zinc-950">
                 <img
                   src={card.url}
                   alt={card.title ?? "APOD"}
@@ -129,31 +193,15 @@ export const GaleriPage = () => {
                     {card.title ?? "Untitled APOD"}
                   </CardTitle>
                   <CardDescription className="text-xs text-zinc-500 dark:text-zinc-400">
-                    {card.explanation ?? "No description available."}
+                    <span className="line-clamp-3">
+                      {card.explanation ?? "No description available."}
+                    </span>
                   </CardDescription>
                 </CardHeader>
-
-                <CardFooter className="grid grid-cols-1 gap-4 sm:grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 mt-auto p-3 pt-0">
-                  {/*variant={isFavorite(favoriteKey) ? "secondary" : "default"}
-                    onClick={() => handleToggleFavorite(favoriteKey)}
-                    disabled={savingFavorite[favoriteKey] || !auth?.user}*/}
-                  <Button
-                    type="button"
-                    className="h-9 w-full text-xs cursor-pointer"
-                  >
-                    Add to favorites
-                  </Button>
+                
+                <CardFooter className="grid grid-cols-1 gap-4 sm:grid-cols-1 lg:grid-cols-1 xl:grid-cols-1 mt-auto p-1 pt-0">
                   <Dialog>
-                    <DialogTrigger
-                      render={
-                        <Button
-                          variant="default"
-                          className="h-9 w-full text-xs cursor-pointer"
-                        >
-                          FULL DETAILS
-                        </Button>
-                      }
-                    />
+                    <DialogTrigger render={<Button className="h-9 w-full text-xs mx=auto">VIEW DETAILS</Button>} />
                     <DialogContent className="w-[min(92vw,1000px)] max-w-none sm:max-w-350">
                       <DialogHeader>
                         <DialogTitle>{card.title ?? "Untitled APOD"}</DialogTitle>
@@ -169,7 +217,9 @@ export const GaleriPage = () => {
                           />
                           <div className="flex flex-col gap-2">
                             <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                              {card.explanation ?? "No description available."}
+                              {card.explanation
+                                ? card.explanation.substring(0, 50)
+                                : "No description available."}
                             </p>
                             <p className="text-sm text-zinc-500 dark:text-zinc-400">
                               {card.copyright ?? "NASA"}
@@ -211,26 +261,154 @@ export const GaleriPage = () => {
             </div>
           </div>
           {/*elcovec space*/}
-          <div className="flex flex-col gap-4 items-start">
+          <div className="flex flex-col gap-4 items-start mt-13">
             <Button
-              variant="ghost"
+              variant="default"
               className="text-purple-400 hover:text-purple-500 cursor-pointer"
+              onClick={() => navigate("/galeri/elcovek")}
             >
-              Palia Andromi Galeria
+              Elcovek Galeria
               <ChevronRight />
             </Button>
-            <Card></Card>
+            {loading && (
+              <p className="text-sm text-zinc-500">Loading saved Elcoveks...</p>
+            )}
+            {!loading && !error && (
+              <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+                {favoriteImages.slice(0, 4).map((card) => {
+                  const metadata = card.data?.[0];
+                  const imageUrl = card.links?.[0]?.href;
+                  const nasaId = metadata?.nasa_id;
+
+                  return (
+                    <Card key={nasaId} className="mx-auto flex h-full w-full max-w-175 flex-col overflow-hidden border bg-white pt-0 shadow-sm dark:bg-zinc-950">
+                      {imageUrl && (
+                        <img
+                          src={imageUrl}
+                          alt={metadata?.title ?? "NASA image"}
+                          className="aspect-video w-full object-cover brightness-100 dark:brightness-90"
+                        />
+                      )}
+                      <CardHeader className="flex min-h-20 flex-col gap-2 p-3">
+                        <CardAction className="flex flex-wrap gap-2">
+                          <Badge variant="secondary" className="text-[10px]">
+                            {metadata?.photographer ?? "NASA"}
+                          </Badge>
+                          <Badge variant="outline" className="text-[10px]">
+                            {metadata?.date_created ?? "Unknown date"}
+                          </Badge>
+                        </CardAction>
+                        <CardTitle className="line-clamp-2 text-sm">
+                          {metadata?.title ?? "Untitled image"}
+                        </CardTitle>
+                        <CardDescription className="line-clamp-3 text-xs">
+                          {metadata?.description ?? "No description available."}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardFooter className="mt-auto p-1 pt-0">
+                        <Dialog>
+                          <DialogTrigger render={<Button className="h-9 w-full text-xs mx-auto">VIEW DETAILS</Button>} />
+                          <DialogContent className="w-[min(92vw,1000px)] max-w-none sm:max-w-350">
+                            <DialogHeader>
+                              <DialogTitle>{metadata?.title ?? "Untitled image"}</DialogTitle>
+                              <DialogDescription className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                                {imageUrl && (
+                                  <img src={imageUrl} alt={metadata?.title ?? "NASA image"} className="aspect-video w-full object-cover" />
+                                )}
+                                <div className="flex flex-col gap-2 text-sm text-zinc-500">
+                                  <p>{metadata?.description ?? "No description available."}</p>
+                                  <p>{metadata?.photographer ?? "NASA"}</p>
+                                  <p>{metadata?.date_created ?? "Unknown date"}</p>
+                                  <p>NASA ID: {nasaId ?? "Unknown"}</p>
+                                  <p>Center: {metadata?.center ?? "Unknown"}</p>
+                                </div>
+                              </DialogDescription>
+                            </DialogHeader>
+                            <DialogFooter>
+                              <DialogClose render={<Button variant="outline">CLOSE</Button>} />
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+                      </CardFooter>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+            {!loading && !error && favoriteImages.length === 0 && (
+              <p className="text-sm text-zinc-500">No Elcovek favorites yet.</p>
+            )}
           </div>
           {/*vibteo space*/}
-          <div className="flex flex-col gap-4 items-start">
+          <div className="flex flex-col gap-4 items-start mt-17">
             <Button
-              variant="ghost"
+              variant="default"
               className="text-blue-400 hover:text-blue-500 cursor-pointer"
+              onClick={() => navigate("/galeri/vibteo")}
             >
-              Palia Andromi Galeria
+              Vibteo Galeria
               <ChevronRight />
             </Button>
+            {loading && (
+              <p className="text-sm text-zinc-500">Loading saved Vibteos...</p>
+            )}
+            {!loading && !error && (
+              <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+                {favoriteVideos.slice(0, 5).map((card) => {
+                  const metadata = card.data?.[0];
+                  const nasaId = metadata?.nasa_id;
 
+                  return (
+                    <Card key={nasaId} className="mx-auto flex h-full w-full max-w-175 flex-col overflow-hidden border bg-white pt-0 shadow-sm dark:bg-zinc-950">
+                      {card.videoUrl && (
+                        <video src={card.videoUrl} controls className="aspect-video w-full object-cover brightness-100 dark:brightness-90" />
+                      )}
+                      <CardHeader className="flex min-h-20 flex-col gap-2 p-3">
+                        <CardAction className="flex flex-wrap gap-2">
+                          <Badge variant="secondary" className="text-[10px]">NASA</Badge>
+                          <Badge variant="outline" className="text-[10px]">
+                            {metadata?.date_created ?? "Unknown date"}
+                          </Badge>
+                        </CardAction>
+                        <CardTitle className="line-clamp-2 text-sm">
+                          {metadata?.title ?? "Untitled video"}
+                        </CardTitle>
+                        <CardDescription className="line-clamp-3 text-xs">
+                          {metadata?.description ?? "No description available."}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardFooter className="mt-auto p-1 pt-0">
+                        <Dialog>
+                          <DialogTrigger render={<Button className="h-9 w-full text-xs">VIEW DETAILS</Button>} />
+                          <DialogContent className="w-[min(92vw,1000px)] max-w-none sm:max-w-350">
+                            <DialogHeader>
+                              <DialogTitle>{metadata?.title ?? "Untitled video"}</DialogTitle>
+                              <DialogDescription className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                                {card.videoUrl && (
+                                  <video src={card.videoUrl} controls className="aspect-video w-full object-cover" />
+                                )}
+                                <div className="flex flex-col gap-2 text-sm text-zinc-500">
+                                  <p>{metadata?.description ?? "No description available."}</p>
+                                  <p>{metadata?.date_created ?? "Unknown date"}</p>
+                                  <p>NASA ID: {nasaId ?? "Unknown"}</p>
+                                  <p>Center: {metadata?.center ?? "Unknown"}</p>
+                                </div>
+                              </DialogDescription>
+                            </DialogHeader>
+                            <DialogFooter>
+                              <DialogClose render={<Button variant="outline">CLOSE</Button>} />
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+                      </CardFooter>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+            {!loading && !error && favoriteVideos.length === 0 && (
+              <p className="text-sm text-zinc-500">No Vibteo favorites yet.</p>
+            )}
           </div>
         </div>
       </div>

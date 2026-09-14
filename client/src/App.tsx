@@ -38,6 +38,9 @@ function App() {
           <Route path="/elcovek" element={<ElcovekPage />} />
           <Route path="/vibteo" element={<VibteoPage />} />
           <Route path="/galeri" element={<GaleriPage />} />
+          <Route path="/galeri/palia-andromi" element={<div>Gallery Page</div>} />
+          <Route path="/galeri/elcovek" element={<div>Gallery Page</div>} />
+          <Route path="/galeri/vibteo" element={<div>Gallery Page</div>} />
           <Route path="/u/profile" element={<div>Profile Page</div>} />
           <Route path="/u/forum" element={<div>Forum Page</div>} />
           <Route path="/u/chat" element={<div>About Page</div>} />
