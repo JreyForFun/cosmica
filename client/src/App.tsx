@@ -11,6 +11,7 @@ import { SignupPage } from './pages/SignupPage'
 import { SOTDPage } from './pages/SOTDPage'
 import { VibteoPage } from './pages/VibteoPage'
 import { GaleriPage } from './pages/GaleriPage'
+import { PaliaGaleri } from './pages/PaliaGaleri'
 
 function ProtectedRoute() {
   const auth = useContext(AuthContext)
@@ -38,7 +39,7 @@ function App() {
           <Route path="/elcovek" element={<ElcovekPage />} />
           <Route path="/vibteo" element={<VibteoPage />} />
           <Route path="/galeri" element={<GaleriPage />} />
-          <Route path="/galeri/palia-andromi" element={<div>Gallery Page</div>} />
+          <Route path="/galeri/palia-andromi" element={<PaliaGaleri/>} />
           <Route path="/galeri/elcovek" element={<div>Gallery Page</div>} />
           <Route path="/galeri/vibteo" element={<div>Gallery Page</div>} />
           <Route path="/u/profile" element={<div>Profile Page</div>} />

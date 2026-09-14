@@ -75,6 +75,25 @@ export const GaleriPage = () => {
     return nasaId ? videoFavoriteIds.includes(nasaId) : false;
   });
 
+  {/*
+   disabled={!card.date || !user?.user}
+  onClick={async () => {
+    if (!card.date || !user?.refreshUser) return;
+
+    try {
+      await axios.patch("/api/auth/favorites", {
+        favorite: card.date,
+        category: "apod",
+      });
+
+      await user.refreshUser();
+    } catch (err) {
+      console.error("Failed to remove favorite", err);
+    }
+  }}
+ 
+    */}
+
   useEffect(() => {
     const fetchFavorites = async () => {
       const favoriteDates = apodFavoritesKey ? apodFavoritesKey.split(",") : [];
