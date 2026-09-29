@@ -11,6 +11,9 @@ import { SignupPage } from './pages/SignupPage'
 import { SOTDPage } from './pages/SOTDPage'
 import { VibteoPage } from './pages/VibteoPage'
 import { GaleriPage } from './pages/GaleriPage'
+import { PaliaGaleri } from './pages/PaliaGaleri'
+import { PaliaElcovek } from './pages/PaliaElcovek'
+import { CosmicaDetailNI } from './pages/CosmicaDetailNI'
 
 function ProtectedRoute() {
   const auth = useContext(AuthContext)
@@ -35,9 +38,13 @@ function App() {
           <Route path="/SOTD" element={<SOTDPage />} />
           <Route path="/palia-andromi" element={<PaliaAndromi />} />
           <Route path="/cosmica/:date" element={<CosmicaDetailPage />} />
+          <Route path="/cosmica/elcovek/:id" element={<CosmicaDetailNI />} />
           <Route path="/elcovek" element={<ElcovekPage />} />
           <Route path="/vibteo" element={<VibteoPage />} />
           <Route path="/galeri" element={<GaleriPage />} />
+          <Route path="/galeri/palia-andromi" element={<PaliaGaleri/>} />
+          <Route path="/galeri/elcovek" element={<PaliaElcovek />} />
+          <Route path="/galeri/vibteo" element={<div>Gallery Page</div>} />
           <Route path="/u/profile" element={<div>Profile Page</div>} />
           <Route path="/u/forum" element={<div>Forum Page</div>} />
           <Route path="/u/chat" element={<div>About Page</div>} />

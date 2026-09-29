@@ -1,14 +1,15 @@
 import { AppError } from "../lib/errors";
 
-export async function fetchNasaAPOD() {
+export async function fetchNasaAPOD(date?: string) {
   const apiKey = process.env.NASA_API_KEY;
 
   if (!apiKey) {
     throw new AppError(500, "NASA API key is not defined");
   }
 
+  const dateQuery = date ? `&date=${encodeURIComponent(date)}` : "";
   const response = await fetch(
-    `https://api.nasa.gov/planetary/apod?api_key=${apiKey}`
+    `https://api.nasa.gov/planetary/apod?api_key=${apiKey}${dateQuery}`
   );
 
   if (!response.ok) {

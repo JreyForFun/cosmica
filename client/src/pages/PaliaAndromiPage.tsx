@@ -48,8 +48,8 @@ export const PaliaAndromi = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cards, setCards] = useState<ApodData[]>([]);
+  const [search, setSearch] = useState("");
   const initialRange = useMemo(() => getRange(PAGE_SIZE - 1), []);
-  const [range, setRange] = useState(initialRange);
   const navigate = useNavigate();
 
   const fetchCardsByRange = useCallback(async (startDate: string, endDate: string) => {
@@ -89,21 +89,18 @@ export const PaliaAndromi = () => {
     return () => window.clearTimeout(timer);
   }, [fetchCardsByRange, initialRange]);
 
-  const handleRangeSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const visibleCards = useMemo(() => {
+    const query = search.trim().toLowerCase();
 
-    if (!range.startDate || !range.endDate) {
-      setError("Please select both start and end dates.");
-      return;
+    if (!query) {
+      return cards;
     }
 
-    if (new Date(range.startDate) > new Date(range.endDate)) {
-      setError("Start date cannot be later than end date.");
-      return;
-    }
-
-    fetchCardsByRange(range.startDate, range.endDate);
-  };
+    return cards.filter((card) => {
+      const haystack = `${card.title ?? ""} ${card.explanation ?? ""}`.toLowerCase();
+      return haystack.includes(query);
+    });
+  }, [cards, search]);
 
   const handleLoadMore = async () => {
     try {
@@ -148,7 +145,7 @@ export const PaliaAndromi = () => {
   return (
     <div className="max-w-7xl p-4">
       <div className="rounded-xl border bg-white p-6 shadow-sm dark:bg-zinc-900">
-        <div className="flex flex-rows justify-between items-center mb-4">
+        <div className="mb-4 flex flex-row items-center justify-between gap-4">
           <div>
             <h1 className="mb-4 text-3xl font-bold">Palia Andromi</h1>
             <p className="mb-4 text-sm uppercase tracking-[0.2em] text-zinc-500">
@@ -163,38 +160,18 @@ export const PaliaAndromi = () => {
           </div>
           </div>
         </div>
-        <form
-          onSubmit={handleRangeSubmit}
-          className="mb-6 flex flex-col gap-3 rounded-xl border border-zinc-200 bg-zinc-50 p-4 md:flex-row md:items-end"
-        >
-          <label className="flex flex-1 flex-col gap-1 text-sm font-medium text-zinc-700">
-            Start date
+        <div className="mb-6 rounded-xl border border-zinc-200 bg-zinc-50 p-4">
+          <label className="flex flex-col gap-1 text-sm font-medium text-zinc-700">
+            Search APODs
             <input
-              type="date"
-              value={range.startDate}
-              onChange={(event) =>
-                setRange((prev) => ({ ...prev, startDate: event.target.value }))
-              }
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search by title or description..."
               className="rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400"
             />
           </label>
-
-          <label className="flex flex-1 flex-col gap-1 text-sm font-medium text-zinc-700">
-            End date
-            <input
-              type="date"
-              value={range.endDate}
-              onChange={(event) =>
-                setRange((prev) => ({ ...prev, endDate: event.target.value }))
-              }
-              className="rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400"
-            />
-          </label>
-
-          <Button type="submit" className="h-10 md:min-w-35">
-            Search range
-          </Button>
-        </form>
+        </div>
 
         {loading && cards.length === 0 && (
           <p className="text-sm text-zinc-500">Loading Palia Andromi Cards...</p>
@@ -204,8 +181,12 @@ export const PaliaAndromi = () => {
           <p className="mt-4 text-sm text-red-500">{error}</p>
         )}
 
+        {!loading && !error && visibleCards.length === 0 && (
+          <p className="mt-4 text-sm text-zinc-500">No APODs match your search.</p>
+        )}
+
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {cards.map((card, index) => (
+          {visibleCards.map((card, index) => (
             <Card
               key={`${card.date ?? index}`}
               className="mx-auto flex w-full max-w-65 flex-col overflow-hidden rounded-t-xl border-0 bg-white pt-0 shadow-sm dark:bg-zinc-950"

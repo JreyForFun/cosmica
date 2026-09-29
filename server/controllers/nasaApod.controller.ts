@@ -8,7 +8,8 @@ export async function getAPOD(
   next: NextFunction
 ) {
   try {
-    const apod = await nasaApodService.fetchNasaAPOD();
+    const date = typeof req.query.date === "string" ? req.query.date : undefined;
+    const apod = await nasaApodService.fetchNasaAPOD(date);
     if(!apod) throw new AppError(500, "Failed to fetch APOD");
     res.status(200).json({
       success: true,
